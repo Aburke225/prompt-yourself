@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <div class="wrap">
@@ -31,7 +31,7 @@
       <p>A free AI chat can teach you any topic — if you make it act like a tutor, not an answer machine. This page gives you the exact prompts for that, plus the habits for checking what it tells you.</p>
     </div>
 
-    <main>
+    <main data-next-href="coach.html" data-next-label="Next guide: Interview coach">
       <section class="part">
         <p class="kicker">Part 1</p>
         <h2>Ask to be taught, not just answered</h2>
@@ -112,22 +112,6 @@ Then give me a similar task so I can try again.</pre></div>
       &copy; 2026 <a href="https://github.com/Aburke225">Andrew Burke</a> &middot; <a href="https://github.com/Aburke225/prompt-yourself">Source on GitHub</a>
     </footer>
   </div>
-  <script>
-    document.querySelectorAll('.prompt').forEach(function (p) {
-      var b = document.createElement('button');
-      b.className = 'copy';
-      b.type = 'button';
-      b.textContent = 'Copy';
-      b.addEventListener('click', function () {
-        navigator.clipboard.writeText(p.querySelector('pre').innerText).then(function () {
-          b.textContent = 'Copied!';
-          setTimeout(function () { b.textContent = 'Copy'; }, 1600);
-        }, function () {
-          b.textContent = 'Select & copy';
-        });
-      });
-      p.appendChild(b);
-    });
-  </script>
+  <script src="guide.js?v=1"></script>
 </body>
 </html>

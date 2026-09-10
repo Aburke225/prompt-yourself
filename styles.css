@@ -150,14 +150,6 @@ code {
 /* ---------- landing ---------- */
 .hero { padding: 4.5rem 0 3rem; }
 .hero .kicker { margin-bottom: 1.25rem; }
-/* let the headline break out of the 42rem column and run over the right
-   margin, so it sits on one line whenever the window is wide enough;
-   the min() caps it at the viewport edge so it can never cause a
-   horizontal scrollbar on narrow screens */
-.hero h1 {
-  width: max-content;
-  max-width: min(calc(50vw + 19.75rem), calc(100vw - 2.5rem));
-}
 
 .cards {
   display: grid;
@@ -280,6 +272,25 @@ section.part { margin-bottom: 2.75rem; }
   cursor: pointer;
 }
 .prompt .copy:hover { border-color: var(--accent); }
+
+/* ---------- guide pager (injected by guide.js) ---------- */
+/* author styles on .btn would otherwise beat the browser's [hidden] rule */
+[hidden] { display: none !important; }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+.pager-count {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
 
 /* ---------- footer ---------- */
 footer {
