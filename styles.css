@@ -195,18 +195,18 @@ code {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.5rem;
-  /* flex column + margin-top:auto pins the button to the card bottom,
-     so buttons align even when one title wraps to two lines */
-  display: flex;
-  flex-direction: column;
 }
-.card .btn {
-  margin-top: auto;
-  align-self: flex-start;
+a.card {
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+a.card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
 }
 .card h2 { margin-top: 0.25rem; }
-.card p { color: var(--muted); }
-.card .kicker { margin-bottom: 0; }
+.card p { color: var(--muted); margin-bottom: 0; }
 
 .cta {
   text-align: center;
@@ -239,15 +239,6 @@ code {
 
 /* ---------- guide pages ---------- */
 .guide-header { padding: 3.25rem 0 1.5rem; }
-.tldr {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.25rem 1.5rem;
-  margin: 1.75rem 0 2.5rem;
-}
-.tldr .kicker { color: var(--muted); }
-.tldr p { margin: 0; }
 
 section.part { margin-bottom: 2.75rem; }
 
