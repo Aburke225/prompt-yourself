@@ -165,6 +165,7 @@ code {
 }
 
 /* the blinking input caret — hero h1 only */
+.caret { white-space: nowrap; } /* the caret wraps with its word, never alone */
 .caret::after {
   content: "";
   display: inline-block;
