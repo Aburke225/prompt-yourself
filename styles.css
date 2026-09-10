@@ -156,6 +156,9 @@ code {
   gap: 1rem;
   margin: 2.25rem 0;
 }
+@media (min-width: 640px) {
+  .cards { grid-template-columns: 1fr 1fr; }
+}
 .card {
   background: var(--card);
   border: 1px solid var(--border);
