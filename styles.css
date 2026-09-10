@@ -150,6 +150,14 @@ code {
 /* ---------- landing ---------- */
 .hero { padding: 4.5rem 0 3rem; }
 .hero .kicker { margin-bottom: 1.25rem; }
+/* let the headline break out of the 42rem column and run over the right
+   margin, so it sits on one line whenever the window is wide enough;
+   the min() caps it at the viewport edge so it can never cause a
+   horizontal scrollbar on narrow screens */
+.hero h1 {
+  width: max-content;
+  max-width: min(calc(50vw + 19.75rem), calc(100vw - 2.5rem));
+}
 
 .cards {
   display: grid;
