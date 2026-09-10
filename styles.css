@@ -24,9 +24,12 @@
   --measure: 42rem;
 }
 
+/* Dark palette (warm charcoal — the same site at night, not a generic dark UI).
+   Applied two ways: system preference unless the user chose light with the
+   toggle, and always when the user chose dark. Keep both blocks identical. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* warm charcoal — the same site at night, not a generic dark UI */
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #1B1815;
     --text: #EAE6DE;
     --muted: #A69E90;
@@ -39,6 +42,20 @@
     --bubble-label: #4ED4B5;
   }
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1B1815;
+  --text: #EAE6DE;
+  --muted: #A69E90;
+  --card: #242019;
+  --border: #3A342B;
+  --accent: #35C4A4;
+  --accent-ink: #0E1F1A;
+  --bubble: #182420;
+  --bubble-border: #2A4038;
+  --bubble-label: #4ED4B5;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -82,6 +99,20 @@ body {
 }
 .nav a { color: var(--muted); text-decoration: none; }
 .nav a:hover, .nav a[aria-current="page"] { color: var(--accent); }
+
+/* light/dark toggle (injected by theme.js) */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.theme-toggle:hover { color: var(--accent); }
+.theme-toggle svg { width: 17px; height: 17px; display: block; }
 
 /* ---------- type ---------- */
 h1 {
