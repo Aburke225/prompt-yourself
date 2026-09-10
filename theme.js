@@ -1,18 +1,16 @@
 // Prompt Yourself — manual light/dark toggle.
-// Default follows the system; a click stores an override in localStorage.
-// The icon shows what you can switch TO the moment you see it in context:
-// sun while in dark mode, moon while in light mode.
+// The site is dark by default regardless of system settings;
+// a click stores an override in localStorage.
+// Sun icon while in dark mode, moon icon while in light mode.
 
 (function () {
   var root = document.documentElement;
-  var mq = window.matchMedia('(prefers-color-scheme: dark)');
 
   function stored() {
     try { return localStorage.getItem('theme'); } catch (e) { return null; }
   }
   function current() {
-    var s = stored();
-    return s === 'light' || s === 'dark' ? s : (mq.matches ? 'dark' : 'light');
+    return stored() === 'light' ? 'light' : 'dark';
   }
 
   var navList = document.querySelector('.nav ul');
@@ -39,11 +37,6 @@
     root.setAttribute('data-theme', next);
     render();
   });
-
-  // follow live system changes while no manual override is stored
-  if (mq.addEventListener) {
-    mq.addEventListener('change', function () { if (!stored()) render(); });
-  }
 
   li.appendChild(btn);
   navList.appendChild(li);

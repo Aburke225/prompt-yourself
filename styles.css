@@ -2,20 +2,23 @@
    Serif = the guide explaining. Mono in a tail-cornered bubble = what you type.
    Flat warm paper, 1px borders, one teal accent. No gradients, no shadows. */
 
+/* Dark is the site's default look regardless of system preference
+   (warm charcoal — the same site at night, not a generic dark UI).
+   Light applies only when the visitor flips the toggle. */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  --bg: #FAF6EF;
-  --text: #26221B;
-  --muted: #6E675C;
-  --card: #FFFFFF;
-  --border: #E4DCCE;
-  --accent: #0E7466;
-  --accent-ink: #FFFFFF;
+  --bg: #1B1815;
+  --text: #EAE6DE;
+  --muted: #A69E90;
+  --card: #242019;
+  --border: #3A342B;
+  --accent: #35C4A4;
+  --accent-ink: #0E1F1A;
 
-  --bubble: #EFF6F2;
-  --bubble-border: #C9E0D7;
-  --bubble-label: #0E7466;
+  --bubble: #182420;
+  --bubble-border: #2A4038;
+  --bubble-label: #4ED4B5;
 
   --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -24,38 +27,19 @@
   --measure: 42rem;
 }
 
-/* Dark palette (warm charcoal — the same site at night, not a generic dark UI).
-   Applied two ways: system preference unless the user chose light with the
-   toggle, and always when the user chose dark. Keep both blocks identical. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #1B1815;
-    --text: #EAE6DE;
-    --muted: #A69E90;
-    --card: #242019;
-    --border: #3A342B;
-    --accent: #35C4A4;
-    --accent-ink: #0E1F1A;
-    --bubble: #182420;
-    --bubble-border: #2A4038;
-    --bubble-label: #4ED4B5;
-  }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #FAF6EF;
+  --text: #26221B;
+  --muted: #6E675C;
+  --card: #FFFFFF;
+  --border: #E4DCCE;
+  --accent: #0E7466;
+  --accent-ink: #FFFFFF;
+  --bubble: #EFF6F2;
+  --bubble-border: #C9E0D7;
+  --bubble-label: #0E7466;
 }
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #1B1815;
-  --text: #EAE6DE;
-  --muted: #A69E90;
-  --card: #242019;
-  --border: #3A342B;
-  --accent: #35C4A4;
-  --accent-ink: #0E1F1A;
-  --bubble: #182420;
-  --bubble-border: #2A4038;
-  --bubble-label: #4ED4B5;
-}
-:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
