@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learn any topic with AI — Prompt Yourself</title>
+  <meta name="description" content="A free AI chat can teach you any topic — if you make it act like a tutor, not an answer machine.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav" aria-label="Site">
+      <a class="wordmark" href="./">prompt yourself</a>
+      <ul>
+        <li><a href="learn.html" aria-current="page">Learn</a></li>
+        <li><a href="coach.html">Interview coach</a></li>
+        <li><a href="https://github.com/Aburke225/prompt-yourself">GitHub</a></li>
+      </ul>
+    </nav>
+
+    <header class="guide-header">
+      <p class="kicker">Guide 01 · Learn</p>
+      <h1>Learn any topic with AI</h1>
+      <p class="lede">You do not need a paid course to learn something new. A free AI chat can be a patient tutor for almost any topic — budgeting, anatomy, algebra, employment law, wine, plumbing. The only skill you need is knowing what to say to it. This page teaches that skill.</p>
+    </header>
+
+    <div class="tldr">
+      <p class="kicker">The short version</p>
+      <p>A free AI chat can teach you any topic — if you make it act like a tutor, not an answer machine. Tell it your level, your goal, and how you like to learn, and ask it to check your understanding as you go. Then use six moves: a learning plan, explanations that go one level deeper at a time, quizzes one question at a time, teaching it back in your own words, analogies with worked examples, and practice with corrections. AI is sometimes wrong, so check facts that matter on the web. Everything on this page works with free tools, and some need no account at all.</p>
+    </div>
+
+    <main>
+      <section class="part">
+        <p class="kicker">Part 1</p>
+        <h2>Ask to be taught, not just answered</h2>
+        <p>There are two ways to use an AI chat. You can ask it for answers. Or you can ask it to teach you.</p><p>Asking for answers feels faster. You get a clean summary in seconds. But a week later, most of it is gone. You read the answer — you never used it. Reading alone does not build memory.</p><p>Learning happens when your brain does work. You try to recall something. You explain it in your own words. You make a mistake and fix it. That effort is what makes knowledge stay.</p><p>So switch the roles. Do not treat the AI like a search box. Treat it like a patient tutor with unlimited time for you. Every technique on this page does one thing: it moves the work from the AI to you.</p>
+      </section>
+      <section class="part">
+        <p class="kicker">Part 2</p>
+        <h2>Start every chat with three facts about you</h2>
+        <p>A good human tutor asks about you before the first lesson. An AI will not ask unless you tell it to. So begin every learning chat with three facts:</p><ul><li><strong>Your level.</strong> "I am a complete beginner." "I know the basics but get confused after that."</li><li><strong>Your goal.</strong> "I want to pass my licensing exam in June." "I want to understand my own tax form."</li><li><strong>How you like to learn.</strong> Short explanations? Lots of examples? Practice questions?</li></ul><p>Then add the most important rule: ask it to <strong>check your understanding instead of lecturing</strong>. Here is a starting prompt you can reuse for any topic:</p><div class="prompt" data-label="Copy this"><pre>You are my tutor for <mark class="slot">[TOPIC]</mark>.
+My level: <mark class="slot">[COMPLETE BEGINNER / I KNOW THE BASICS / DESCRIBE IT]</mark>.
+My goal: <mark class="slot">[WHAT YOU WANT TO BE ABLE TO DO]</mark>.
+I learn best with <mark class="slot">[SHORT EXPLANATIONS / EXAMPLES / PRACTICE QUESTIONS]</mark>.
+
+Important: do not lecture. Explain one small piece at a time.
+After each piece, ask me one question to check I understood.
+Wait for my answer before you continue.</pre></div><p>That last rule is the most important one. The chat stops being one long block of text. It becomes a conversation where you have to think.</p>
+      </section>
+      <section class="part">
+        <p class="kicker">Part 3</p>
+        <h2>Six techniques that work for any topic</h2>
+        <p>These six moves work for nursing, retail management, law, music theory, coding — anything. Copy a template, fill in the brackets, and send it. You do not need all six every time. A good session often looks like: plan, explain, teach back, quiz, practice.</p><h4>1. Build a learning plan</h4><p>Before you study, ask for a plan. Ask for steps small enough to finish in one study session, with a clear way to know each step is done.</p><div class="prompt" data-label="Copy this"><pre>I want to learn <mark class="slot">[TOPIC]</mark>.
+My goal: <mark class="slot">[WHAT YOU WANT TO BE ABLE TO DO]</mark> by <mark class="slot">[WHEN]</mark>.
+Time I can spend: <mark class="slot">[HOURS PER WEEK]</mark>.
+What I already know: <mark class="slot">[NOTHING / A LITTLE / DESCRIBE IT]</mark>.
+
+Make me a step-by-step learning plan.
+Keep each step small enough for one study session.
+For each step, tell me how I will know I am done with it.
+Then ask me if any step looks too big.</pre></div><h4>2. Explain at my level, then raise the level</h4><p>Start simple, and only go deeper when the simple version is clear. This stops the most common failure: an explanation that is correct but too advanced to help you.</p><div class="prompt" data-label="Copy this"><pre>Explain <mark class="slot">[CONCEPT]</mark> to me.
+Round 1: explain it for a complete beginner. Everyday words only.
+Then ask me what is still unclear, and wait for my answer.
+Round 2: explain it again, one level deeper.
+Keep going one level at a time until I say stop.</pre></div><h4>3. Quiz me, one question at a time</h4><p>Trying to recall an answer is one of the best-tested ways to learn. The key is one question at a time — otherwise you read the answers instead of trying to recall them.</p><div class="prompt" data-label="Copy this"><pre>Quiz me on <mark class="slot">[TOPIC]</mark>.
+Ask ONE question at a time and wait for my answer.
+If I am right, tell me why the answer is right.
+If I am wrong, do not give me the answer yet.
+Give me a hint and let me try once more.
+Start easy and get harder.
+After 10 questions, list what I should review.</pre></div><h4>4. Make me teach it back</h4><p>Explaining something in your own words is the strongest test of understanding. If you cannot explain it, you have not learned it yet — and the AI will show you exactly where the gap is.</p><div class="prompt" data-label="Copy this"><pre>I will now explain <mark class="slot">[CONCEPT]</mark> in my own words.
+Read it like a strict but kind teacher.
+Tell me: what I got right, what I got wrong,
+and what important part I left out.
+
+My explanation: <mark class="slot">[WRITE YOUR EXPLANATION HERE]</mark></pre></div><h4>5. Ask for analogies and worked examples</h4><p>A new idea is easier to remember when it connects to something you already know. Tell the AI what you know well, and make it walk through a full example — not just the steps, but the reasons.</p><div class="prompt" data-label="Copy this"><pre>Explain <mark class="slot">[CONCEPT]</mark> using an analogy from <mark class="slot">[SOMETHING YOU KNOW WELL, for example: cooking, football, gardening, running a small shop]</mark>.
+Then walk me through one worked example, step by step.
+Say why each step happens, not just what to do.
+Then give me one similar example to try by myself.</pre></div><h4>6. Practice, and let it correct you</h4><p>Mistakes are not a problem. Mistakes with instant, clear feedback are how skill grows. This is the loop to repeat the most.</p><div class="prompt" data-label="Copy this"><pre>Give me one practice task on <mark class="slot">[TOPIC]</mark> at <mark class="slot">[MY LEVEL]</mark>.
+Wait for my answer.
+Then correct it like a good teacher:
+point to each mistake, explain why it is wrong,
+and show me the better version.
+Then give me a similar task so I can try again.</pre></div>
+      </section>
+      <section class="part">
+        <p class="kicker">Part 4</p>
+        <h2>Check what the AI tells you</h2>
+        <p>AI chats sometimes say things that are wrong — and they say them with full confidence. This is a known limit of the technology, not a reason to avoid it. It just means you need a small checking habit — the same way you would not repeat a fact from a stranger without checking it first.</p><ul><li><strong>Ask the AI itself:</strong> "How sure are you about this? What should I double-check?" It often knows which parts might be wrong.</li><li><strong>Ask for sources — and open them.</strong> If a source does not exist, or does not say what the AI claimed, treat that claim as unconfirmed.</li><li><strong>Check important facts twice.</strong> Names, numbers, dates, prices, laws, and health advice deserve a quick search on the web: an official site, Wikipedia, or your library.</li><li><strong>Match the effort to the risk.</strong> Learning for fun? A quick check is fine. Making a decision about money, health, law, or an exam? Confirm with a trusted source before you act.</li><li><strong>Watch the date.</strong> An AI's knowledge stops at a certain date. For things that change often — prices, laws, software menus — check a current source.</li></ul><p>Ideas, explanations, and practice questions from an AI are usually good. Specific facts are what you check. Remember that difference, and you get a tutor you can trust.</p>
+      </section>
+      <section class="part">
+        <p class="kicker">Part 5</p>
+        <h2>Free tools to pair with your AI chat</h2>
+        <p>Everything on this page works with free tools. All of these were checked in September 2026.</p><h4>Free AI chats</h4><ul><li><a href="https://duck.ai">Duck.ai</a> — free, <strong>no account needed</strong>. One site where you can chat with several well-known AI models. Chats are saved on your device, not to an account. There is a daily limit on free use, but it is enough for a study session. The easiest place to start.</li><li><a href="https://chatgpt.com">ChatGPT</a> — basic text chat works <strong>without an account</strong>. Chats are not saved in that mode, so copy anything you want to keep. A <strong>free account</strong> (no payment needed) adds saved chats and more features.</li><li><a href="https://claude.ai">Claude</a> — <strong>free with an account</strong>. Good at long, patient explanations. The free plan limits how many messages you can send in a few hours.</li><li><a href="https://gemini.google.com">Gemini</a> — <strong>free with a Google account</strong>. The free plan has daily limits.</li></ul><p>Any of these can run every prompt on this page. If you do not want to sign up for anything, use Duck.ai.</p><h4>Free learning sites</h4><ul><li><a href="https://www.youtube.com">YouTube</a> — free, <strong>no account needed</strong> to watch most videos. When the AI's text explanation is not enough, ask it: "What should I search on YouTube to see this done?"</li><li><a href="https://www.wikipedia.org">Wikipedia</a> — free, <strong>no account</strong>. Good for checking facts and for learning the standard names for things in your topic.</li><li><a href="https://www.khanacademy.org">Khan Academy</a> — free. <strong>No account needed to watch</strong>; a free account saves your progress. Strong for math, science, economics, and test preparation.</li><li><a href="https://ocw.mit.edu">MIT OpenCourseWare</a> — free, <strong>no account</strong>. Real university course materials: lecture notes, problem sets, and videos, from beginner to advanced.</li><li><strong>Your public library</strong> — free with a library card. Many libraries also give free online access to e-books, courses, and language tools. Ask a librarian what you can get with your card.</li></ul><p>A pattern that works well: the AI chat is your tutor, and these sites are your textbook and your fact-checker.</p>
+      </section>
+      <section class="part">
+        <p class="kicker">Part 6</p>
+        <h2>A full example: reading a rental contract</h2>
+        <p>Here is the whole method on one everyday topic: understanding a rental contract before you sign it. Nothing technical — just a thing many people sign without fully reading.</p><blockquote><p><strong>You:</strong> You are my tutor. Topic: rental contracts. My level: I have never signed one. My goal: understand the contract for an apartment I want to rent, so I know what I am agreeing to. Do not lecture — explain one part at a time and check my understanding as we go.</p></blockquote><blockquote><p><strong>The AI:</strong> Explains one small idea: a rental contract mainly answers four questions — how much you pay, how long you stay, what you must do, and what the landlord must do. Then it asks you: "Which of those four do you think causes the most arguments?"</p></blockquote><blockquote><p><strong>You:</strong> You guess "the rent." It says you were close — deposits cause more arguments — and explains why with a short example. Then you switch to teach-back: "Let me explain a security deposit in my own words. Tell me what I get wrong."</p></blockquote><blockquote><p><strong>The AI:</strong> Points out the part you missed — the exact rules for when a landlord can keep part of the deposit — and shows a simple example with numbers.</p></blockquote><blockquote><p><strong>You:</strong> "Quiz me. Five short questions about deposits, notice periods, and repairs. One at a time."</p></blockquote><p>After the quiz, you ask one last question: "What should I ask the landlord before I sign?" Then comes the checking habit. Deposit and notice rules differ by country and city, so you confirm the local rules on an official housing or tenant-information site before you rely on them.</p><p>Notice the loop: tell the AI about you, get one small explanation, teach it back, take a quiz, then check the facts that matter. The same loop works for personal budgeting, a nursing exam, a new language, or a new job skill.</p>
+      </section>
+      <section class="part">
+        <p class="kicker">Part 7</p>
+        <h2>Start today</h2>
+        <p>Pick one topic you have wanted to learn for a while. Open a free chat — <a href="https://duck.ai">Duck.ai</a> needs no account. Paste the starting prompt from this page and fill in the brackets. Spend twenty minutes with it.</p><p>You do not need a course, a subscription, or anyone's permission. Go prompt yourself.</p>
+      </section>
+    </main>
+
+    <footer>
+      <p class="next">Next: <a href="coach.html">Build your own AI interview coach</a></p>
+      &copy; 2026 <a href="https://github.com/Aburke225">Andrew Burke</a> &middot; <a href="https://github.com/Aburke225/prompt-yourself">Source on GitHub</a>
+    </footer>
+  </div>
+  <script>
+    document.querySelectorAll('.prompt').forEach(function (p) {
+      var b = document.createElement('button');
+      b.className = 'copy';
+      b.type = 'button';
+      b.textContent = 'Copy';
+      b.addEventListener('click', function () {
+        navigator.clipboard.writeText(p.querySelector('pre').innerText).then(function () {
+          b.textContent = 'Copied!';
+          setTimeout(function () { b.textContent = 'Copy'; }, 1600);
+        }, function () {
+          b.textContent = 'Select & copy';
+        });
+      });
+      p.appendChild(b);
+    });
+  </script>
+</body>
+</html>
