@@ -137,6 +137,17 @@ async function openAiStyle(url, key, model, system, messages) {
 const ipHits = new Map(); // ip -> [timestamps]
 let dayStamp = '';
 let dayCount = 0;
+let lastAllFail = 0; // when every provider last failed; page checks via GET
+const RESTING_WINDOW_MS = 10 * 60 * 1000;
+
+// check without recording a hit — used by the GET status endpoint
+function peekLimited(ip) {
+  const now = Date.now();
+  const today = new Date().toISOString().slice(0, 10);
+  if (today === dayStamp && dayCount >= GLOBAL_PER_DAY) return true;
+  const hits = (ipHits.get(ip) || []).filter((t) => now - t < 3600_000);
+  return hits.length >= PER_IP_PER_HOUR;
+}
 
 function rateLimited(ip) {
   const now = Date.now();
@@ -182,6 +193,19 @@ export default {
     }
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+    if (request.method === 'GET') {
+      // page-load health check: is the bot resting or this visitor limited?
+      const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+      return json(
+        {
+          ok: true,
+          resting: Date.now() - lastAllFail < RESTING_WINDOW_MS,
+          limited: peekLimited(ip),
+        },
+        200,
+        origin
+      );
     }
     if (request.method !== 'POST') {
       return json({ error: 'method' }, 405, origin);
@@ -229,12 +253,14 @@ export default {
       if (!p.key) continue;
       try {
         const reply = await p.call(p.key, system, messages);
+        lastAllFail = 0;
         return json({ reply, provider: p.name }, 200, origin);
       } catch (e) {
         // quota hit, model gone, or provider down — fall through to the next
         console.log(`provider ${p.name} failed: ${e.message}`);
       }
     }
+    lastAllFail = Date.now();
     return json({ error: 'resting' }, 503, origin);
   },
 };

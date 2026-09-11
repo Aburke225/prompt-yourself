@@ -176,13 +176,33 @@
   }
 
   // ---------- start ----------
-  if (!ENDPOINT) {
-    collapse(RESTING_MSG);
-  } else {
+  // Before greeting, ask the Worker whether the bot can actually serve this
+  // visitor. Arriving mid-outage collapses straight to the guide — no dead
+  // greeting, no input that goes nowhere. (An old Worker without the status
+  // endpoint answers with neither flag, which reads as live.)
+  function goLive() {
     setStatus(true);
     var greeting = GREETINGS[bot] || GREETINGS.tutor;
     addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
+  }
+
+  if (!ENDPOINT) {
+    collapse(RESTING_MSG);
+  } else {
+    var boot = addTyping();
+    fetch(ENDPOINT, { method: 'GET' })
+      .then(function (res) { return res.json(); })
+      .then(function (s) {
+        boot.remove();
+        if (s.limited) collapse(LIMIT_MSG);
+        else if (s.resting) collapse(RESTING_MSG);
+        else goLive();
+      })
+      .catch(function () {
+        boot.remove();
+        collapse(RESTING_MSG);
+      });
   }
 
   var pending = false;
