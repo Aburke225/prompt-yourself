@@ -170,6 +170,7 @@
   // message, typing goes away entirely, and the guide opens below.
   function collapse(message) {
     setStatus(false);
+    msgs.innerHTML = ''; // the resting line replaces the whole transcript
     addFallback(message);
     form.remove();
     revealGuide(false);
