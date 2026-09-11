@@ -372,9 +372,14 @@ section.part { margin-bottom: 2.75rem; }
 @keyframes bcdots { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .bc-typing span { animation: none; } }
 
-/* resting fallback inside the chat */
-.bc-fallback .prompt { margin: 0.85rem 0; }
-.bc-go { font-size: 0.85rem; padding: 0.5rem 1rem; }
+/* resting fallback: line inside the box, guide button below it
+   (the button replaces the bridge line, so it wears its spacing) */
+.bc-go {
+  display: inline-block;
+  font-size: 0.9rem;
+  padding: 0.55rem 1.1rem;
+  margin: 1.1rem 0 0.4rem;
+}
 
 .bc-form {
   display: flex;

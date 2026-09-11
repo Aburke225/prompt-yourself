@@ -104,11 +104,6 @@
     var p = document.createElement('p');
     p.innerHTML = render(intro);
     wrap.appendChild(p);
-    var go = document.createElement('a');
-    go.className = 'btn bc-go';
-    go.href = GUIDE_URL;
-    go.textContent = 'Go prompt yourself.';
-    wrap.appendChild(go);
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -125,7 +120,14 @@
     msgs.innerHTML = ''; // the resting line replaces the whole transcript
     addFallback(message);
     form.remove();
-    revealGuide(false);
+    // the guide button takes the bridge line's spot below the box
+    var go = document.createElement('a');
+    go.className = 'btn bc-go';
+    go.href = GUIDE_URL;
+    go.textContent = 'Go prompt yourself.';
+    var bridge = document.querySelector('.guide-bridge');
+    if (bridge) bridge.replaceWith(go);
+    else host.insertAdjacentElement('afterend', go);
   }
 
   // ---------- start ----------
