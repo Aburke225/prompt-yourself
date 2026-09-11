@@ -5,7 +5,7 @@
 
 (function () {
   // Set to the deployed Worker URL to bring the bots live. Empty = resting.
-  var ENDPOINT = '';
+  var ENDPOINT = 'https://prompt-yourself-bot.andrewburke225.workers.dev';
 
   var host = document.getElementById('bot-chat');
   if (!host) return;
