@@ -1,0 +1,15 @@
+# Cloudflare Worker config for the Prompt Yourself chat relay.
+# Deploy with the dashboard (paste worker.js) or `npx wrangler deploy` from
+# this folder. Keys are SECRETS (never in this file): set them in the
+# dashboard under Settings → Variables and Secrets, or with
+# `npx wrangler secret put GEMINI_API_KEY` etc.
+
+name = "prompt-yourself-bot"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# Optional plain-text model overrides (defaults live in worker.js):
+# [vars]
+# GEMINI_MODEL = "gemini-flash-lite-latest"
+# GROQ_MODEL = "llama-3.3-70b-versatile"
+# OPENROUTER_MODEL = "meta-llama/llama-3.3-70b-instruct:free"

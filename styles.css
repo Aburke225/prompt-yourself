@@ -305,6 +305,109 @@ section.part { margin-bottom: 2.75rem; }
   color: var(--muted);
 }
 
+/* ---------- live practice bot ---------- */
+.bot-section { margin: 0 0 3rem; }
+.bot-section > p { color: var(--muted); }
+
+.bot-chat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 1.25rem;
+}
+.bc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+.bc-dot.resting { background: #D98E04; }
+
+.bc-msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.1rem;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+.bc-bot { max-width: 94%; font-size: 0.98rem; line-height: 1.6; }
+.bc-bot p { margin: 0 0 0.6rem; }
+.bc-bot p:last-child { margin-bottom: 0; }
+.bc-user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: var(--bubble);
+  border: 1px solid var(--bubble-border);
+  border-radius: 14px 14px 3px 14px;
+  padding: 0.5rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* typing indicator */
+.bc-typing span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: bcdots 1s ease-in-out infinite;
+}
+.bc-typing span:nth-child(2) { animation-delay: 0.15s; }
+.bc-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bcdots { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bc-typing span { animation: none; } }
+
+/* resting fallback inside the chat */
+.bc-fallback .prompt { margin: 0.85rem 0; }
+.bc-go { font-size: 0.85rem; padding: 0.5rem 1rem; }
+
+.bc-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.bc-input {
+  flex: 1;
+  resize: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  padding: 0.55rem 0.7rem;
+  max-height: 128px;
+}
+.bc-input:focus { outline: none; border-color: var(--accent); }
+.bc-input:disabled { opacity: 0.6; }
+.bc-send { padding: 0.55rem 1.1rem; font-size: 0.9rem; }
+.bc-send:disabled { opacity: 0.55; cursor: default; }
+
+.bc-note {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.6rem;
+}
+
 /* ---------- footer ---------- */
 footer {
   margin-top: 3.5rem;
