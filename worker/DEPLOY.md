@@ -21,7 +21,8 @@ Optional but recommended backups (same idea, no card):
 ## 2. Create the Worker on Cloudflare (5 min)
 
 1. Sign up free at https://dash.cloudflare.com (no card).
-2. In the left sidebar: **Workers & Pages** → **Create** → **Create Worker**.
+2. In the left sidebar: **Compute** (under "Build") → **Create** →
+   **Create Worker**. (Older dashboards call this "Workers & Pages".)
 3. Name it `prompt-yourself-bot`, click **Deploy** (deploys the hello-world).
 4. Click **Edit code**, delete everything, paste the entire contents of
    `worker.js`, then **Save and deploy**.
