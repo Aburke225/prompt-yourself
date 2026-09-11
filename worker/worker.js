@@ -14,7 +14,10 @@ const ALLOWED_ORIGINS = [
 // Visitor limits (in-memory, per Worker isolate — resets when the isolate is
 // recycled, so treat it as a speed bump; the providers' own free-tier quotas
 // are the hard backstop that keeps everything at $0).
-const PER_IP_PER_HOUR = 20;
+// generous per person: a full coach session (~15 msgs) plus a full tutor
+// session in one sitting still fits. Traffic is 2-4 visitors/day, so even
+// 4 people maxing out stays far inside every provider's free tier.
+const PER_IP_PER_HOUR = 60;
 const GLOBAL_PER_DAY = 600;
 
 const MAX_MESSAGES = 16;
