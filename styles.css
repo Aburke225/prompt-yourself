@@ -401,6 +401,13 @@ section.part { margin-bottom: 2.75rem; }
 .bc-send { padding: 0.55rem 1.1rem; font-size: 0.9rem; }
 .bc-send:disabled { opacity: 0.55; cursor: default; }
 
+/* the bridge from the live bot to the guide (guide starts hidden behind it) */
+.guide-bridge {
+  margin: 1.1rem 0 0.4rem;
+  font-size: 1.02rem;
+}
+.guide-bridge a { color: var(--accent); }
+
 .bc-note {
   font-family: var(--font-mono);
   font-size: 0.72rem;

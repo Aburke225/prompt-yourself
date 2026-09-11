@@ -52,7 +52,7 @@ A JSON `{"reply":"...","provider":"gemini"}` means it works.
 ## Notes
 
 - The Worker only accepts requests whose Origin is the site (or localhost),
-  rate-limits each visitor to 60 messages/hour, and caps ~600 messages/day
+  rate-limits each visitor to 100 messages/hour, and caps ~600 messages/day
   globally — all far inside every free tier.
 - If Google deprecates a model, the default alias `gemini-flash-lite-latest`
   tracks the newest one automatically; you can also override models under

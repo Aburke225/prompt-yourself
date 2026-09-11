@@ -22,6 +22,28 @@
   var fallbackEl = document.getElementById('bc-fallback');
   var FALLBACK_PROMPT = fallbackEl ? fallbackEl.textContent.trim() : '';
 
+  // The guide starts tucked behind the bridge link ("Prefer to create your
+  // own…?"). It reveals on click, on a #part-N deep link, or automatically
+  // when the bot can't serve — resting or rate-limited, the guide is the path.
+  var main = document.querySelector('main');
+  var bridge = document.querySelector('.guide-bridge');
+  function revealGuide(scroll) {
+    if (main) main.hidden = false;
+    if (bridge) bridge.hidden = true;
+    if (scroll && main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  if (main) main.hidden = true;
+  if (/^#part-\d+$/.test(location.hash)) revealGuide(false);
+  if (bridge) {
+    var bridgeLink = bridge.querySelector('a');
+    if (bridgeLink) {
+      bridgeLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        revealGuide(true);
+      });
+    }
+  }
+
   // ---------- build the chat UI ----------
   var head = document.createElement('div');
   head.className = 'bc-head';
@@ -144,19 +166,23 @@
     'you’ve hit the hourly limit for the free bot — take a break, or take the same ' +
     noun + ' with you as a copy-paste prompt.';
 
-  // ---------- start ----------
-  var greeting = GREETINGS[bot] || GREETINGS.tutor;
-  addBot(greeting);
-  history.push({ role: 'assistant', content: greeting });
-
-  if (!ENDPOINT) {
+  // collapse: the bot is out of service, so the chat shrinks to the resting
+  // message, typing goes away entirely, and the guide opens below.
+  function collapse(message) {
     setStatus(false);
-    addFallback(RESTING_MSG);
-    input.disabled = true;
-    send.disabled = true;
-    input.placeholder = 'The live bot is offline right now — use the prompt above in any free chat.';
+    addFallback(message);
+    form.remove();
+    revealGuide(false);
+  }
+
+  // ---------- start ----------
+  if (!ENDPOINT) {
+    collapse(RESTING_MSG);
   } else {
     setStatus(true);
+    var greeting = GREETINGS[bot] || GREETINGS.tutor;
+    addBot(greeting);
+    history.push({ role: 'assistant', content: greeting });
   }
 
   var pending = false;
@@ -201,17 +227,14 @@
           addBot(r.data.reply);
           history.push({ role: 'assistant', content: r.data.reply });
         } else if (r.status === 429) {
-          setStatus(false);
-          addFallback(LIMIT_MSG);
+          collapse(LIMIT_MSG);
         } else {
-          setStatus(false);
-          addFallback(RESTING_MSG);
+          collapse(RESTING_MSG);
         }
       })
       .catch(function () {
         typing.remove();
-        setStatus(false);
-        addFallback(RESTING_MSG);
+        collapse(RESTING_MSG);
       })
       .finally(function () {
         pending = false;
