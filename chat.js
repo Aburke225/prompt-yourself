@@ -19,30 +19,8 @@
       "I'm the live version of the coach this guide teaches you to build. Before we start, tell me: the job or program you're interviewing for, two or three highlights from your background, and your weak spots. Then I'll ask my first question.",
   };
 
-  var fallbackEl = document.getElementById('bc-fallback');
-  var FALLBACK_PROMPT = fallbackEl ? fallbackEl.textContent.trim() : '';
-
-  // The guide starts tucked behind the bridge link ("Prefer to create your
-  // own…?"). It reveals on click, on a #part-N deep link, or automatically
-  // when the bot can't serve — resting or rate-limited, the guide is the path.
-  var main = document.querySelector('main');
-  var bridge = document.querySelector('.guide-bridge');
-  function revealGuide(scroll) {
-    if (main) main.hidden = false;
-    if (bridge) bridge.hidden = true;
-    if (scroll && main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-  if (main) main.hidden = true;
-  if (/^#part-\d+$/.test(location.hash)) revealGuide(false);
-  if (bridge) {
-    var bridgeLink = bridge.querySelector('a');
-    if (bridgeLink) {
-      bridgeLink.addEventListener('click', function (e) {
-        e.preventDefault();
-        revealGuide(true);
-      });
-    }
-  }
+  // where the guide lives (its own page) — the resting button points there
+  var GUIDE_URL = host.dataset.guide || './';
 
   // ---------- build the chat UI ----------
   var head = document.createElement('div');
@@ -126,45 +104,19 @@
     var p = document.createElement('p');
     p.innerHTML = render(intro);
     wrap.appendChild(p);
-    if (FALLBACK_PROMPT) {
-      var box = document.createElement('div');
-      box.className = 'prompt';
-      box.setAttribute('data-label', 'Copy this');
-      var pre = document.createElement('pre');
-      pre.textContent = FALLBACK_PROMPT;
-      box.appendChild(pre);
-      var copy = document.createElement('button');
-      copy.className = 'copy';
-      copy.type = 'button';
-      copy.textContent = 'Copy';
-      copy.addEventListener('click', function () {
-        navigator.clipboard.writeText(FALLBACK_PROMPT).then(
-          function () {
-            copy.textContent = 'Copied!';
-            setTimeout(function () { copy.textContent = 'Copy'; }, 1600);
-          },
-          function () { copy.textContent = 'Select & copy'; }
-        );
-      });
-      box.appendChild(copy);
-      wrap.appendChild(box);
-      var go = document.createElement('a');
-      go.className = 'btn bc-go';
-      go.href = 'https://duck.ai';
-      go.target = '_blank';
-      go.rel = 'noopener';
-      go.textContent = 'Open a free chat';
-      wrap.appendChild(go);
-    }
+    var go = document.createElement('a');
+    go.className = 'btn bc-go';
+    go.href = GUIDE_URL;
+    go.textContent = 'Go prompt yourself.';
+    wrap.appendChild(go);
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
   }
 
   var RESTING_MSG =
-    'the free bot is resting — here’s the same ' + noun + ' as a copy-paste prompt.';
+    'the free bot is resting — take a look at the guide below to create your own.';
   var LIMIT_MSG =
-    'you’ve hit the hourly limit for the free bot — take a break, or take the same ' +
-    noun + ' with you as a copy-paste prompt.';
+    'you’ve hit the hourly limit for the free bot — take a look at the guide below to create your own.';
 
   // collapse: the bot is out of service, so the chat shrinks to the resting
   // message, typing goes away entirely, and the guide opens below.
