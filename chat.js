@@ -382,7 +382,7 @@
       upBtn.type = 'button';
       upBtn.className = 'bc-upload';
       upBtn.textContent = 'or click here to upload your resume';
-      upBtn.textContent = 'or click here to upload your resume — or drag it into the chat';
+      upBtn.textContent = 'or click here to upload your resume — drag and drop works too';
       var fileIn = document.createElement('input');
       fileIn.type = 'file';
       fileIn.accept = '.pdf,.png,.jpg,.jpeg,.txt';
