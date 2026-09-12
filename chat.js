@@ -11,6 +11,7 @@
   if (!host) return;
   var bot = host.dataset.bot; // 'tutor' | 'coach'
   var noun = bot === 'coach' ? 'coach' : 'tutor';
+  var multimodal = bot === 'coach'; // voice + whiteboard: interview practice only
 
   var GREETINGS = {
     tutor:
@@ -58,7 +59,7 @@
   // mic button — speak instead of type (browser speech-to-text, no server)
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var micBtn = null;
-  if (SR) {
+  if (SR && multimodal) {
     micBtn = document.createElement('button');
     micBtn.type = 'button';
     micBtn.className = 'bc-icon';
@@ -69,7 +70,7 @@
   }
 
   form.appendChild(input);
-  form.appendChild(drawBtn);
+  if (multimodal) form.appendChild(drawBtn);
   if (micBtn) form.appendChild(micBtn);
   form.appendChild(send);
 
@@ -108,8 +109,10 @@
   host.className = 'bot-chat';
   host.appendChild(head);
   host.appendChild(msgs);
-  host.appendChild(attachRow);
-  host.appendChild(wb);
+  if (multimodal) {
+    host.appendChild(attachRow);
+    host.appendChild(wb);
+  }
   host.appendChild(form);
 
   var history = []; // {role, content, image?} — greeting included for context
@@ -311,41 +314,12 @@
   // visitor. Arriving mid-outage collapses straight to the guide — no dead
   // greeting, no input that goes nowhere. (An old Worker without the status
   // endpoint answers with neither flag, which reads as live.)
-  // one-tap starters: click to fill the box, edit, send
-  var CHIPS = {
-    tutor: [
-      'Excel basics — never used it — I want a budget spreadsheet for my apartment',
-      'Personal budgeting — beginner — I want to stop running out of money each month',
-      'Python — I know a little — I want to automate boring tasks at work',
-    ],
-    coach: [
-      'Software engineering intern at a startup; built an iOS app; I ramble',
-      'Nurse residency at a city hospital; two years as a CNA; I freeze up under pressure',
-      'Retail shift lead; three years in customer service; weak on "tell me about yourself"',
-    ],
-  };
-  var chipsRow = null;
 
   function goLive() {
     setStatus(true);
     var greeting = GREETINGS[bot] || GREETINGS.tutor;
     addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
-    chipsRow = document.createElement('div');
-    chipsRow.className = 'bc-chips';
-    (CHIPS[bot] || CHIPS.tutor).forEach(function (t) {
-      var c = document.createElement('button');
-      c.type = 'button';
-      c.className = 'bc-chip';
-      c.textContent = t;
-      c.addEventListener('click', function () {
-        input.value = t;
-        autogrow();
-        input.focus();
-      });
-      chipsRow.appendChild(c);
-    });
-    msgs.appendChild(chipsRow);
   }
 
   if (!ENDPOINT) {
@@ -390,10 +364,6 @@
     clearAttachment();
     input.value = '';
     autogrow();
-    if (chipsRow) {
-      chipsRow.remove();
-      chipsRow = null;
-    }
     addUser(text, image);
     var msg = { role: 'user', content: text };
     if (image) msg.image = image;

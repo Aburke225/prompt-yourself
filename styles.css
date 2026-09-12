@@ -381,21 +381,6 @@ section.part { margin-bottom: 2.75rem; }
   margin: 1.1rem 0 0.4rem;
 }
 
-/* one-tap starter chips under the greeting */
-.bc-chips { display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start; }
-.bc-chip {
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  text-align: left;
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  cursor: pointer;
-}
-.bc-chip:hover { border-color: var(--accent); }
-
 /* icon buttons: draw + speak */
 .bc-icon {
   display: inline-flex;
