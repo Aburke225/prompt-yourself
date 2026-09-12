@@ -170,13 +170,13 @@ code {
 @media (prefers-reduced-motion: reduce) { .caret::after { animation: none; } }
 
 /* ---------- landing ---------- */
-.hero { padding: 4.5rem 0 3rem; }
+.hero { padding: 3rem 0 2.25rem; }
 .hero .kicker { margin-bottom: 1.25rem; }
 
 .cards {
   display: grid;
   gap: 1rem;
-  margin: 2.25rem 0;
+  margin: 1.5rem 0 2.25rem;
 }
 @media (min-width: 640px) {
   .cards { grid-template-columns: 1fr 1fr; }
