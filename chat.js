@@ -15,9 +15,9 @@
 
   var GREETINGS = {
     tutor:
-      "Hey — I'm the live tutor. Tell me three things and we'll start: the topic, your level, and your goal. For example: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
+      "I'm the live tutor, tell me what you'd like to learn! Something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
     coach:
-      "I'm a practice interviewer. To start, tell me the job or program, a highlight or two from your background, and your weak spots. For example: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
+      "I'm a practice interviewer. To start, tell me something like: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
   };
 
   // where the guide lives (its own page) — the resting button points there
