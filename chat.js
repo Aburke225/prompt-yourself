@@ -14,9 +14,9 @@
 
   var GREETINGS = {
     tutor:
-      "Hey — I'm the live tutor from this guide. Tell me three things and we'll start: the topic you want to learn, your level (complete beginner? know the basics?), and what you want to be able to do.",
+      "Hey — I'm the live tutor. Tell me three things and we'll start: the topic, your level, and your goal. For example: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
     coach:
-      "I'm the live version of the coach this guide teaches you to build. Before we start, tell me: the job or program you're interviewing for, two or three highlights from your background, and your weak spots. Then I'll ask my first question.",
+      "I'm a practice interviewer: about six questions, honest feedback after each answer, then a debrief. Tell me the job or program, a highlight or two from your background, and your weak spots. For example: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
   };
 
   // where the guide lives (its own page) — the resting button points there
