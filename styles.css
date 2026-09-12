@@ -381,6 +381,98 @@ section.part { margin-bottom: 2.75rem; }
   margin: 1.1rem 0 0.4rem;
 }
 
+/* one-tap starter chips under the greeting */
+.bc-chips { display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start; }
+.bc-chip {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  text-align: left;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+}
+.bc-chip:hover { border-color: var(--accent); }
+
+/* icon buttons: draw + speak */
+.bc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  padding: 0.5rem 0.55rem;
+  cursor: pointer;
+  flex: none;
+}
+.bc-icon:hover { color: var(--accent); border-color: var(--accent); }
+.bc-icon svg { width: 16px; height: 16px; }
+.bc-icon.listening {
+  color: #e5484d;
+  border-color: #e5484d;
+  animation: bcpulse 1.2s ease-in-out infinite;
+}
+@keyframes bcpulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .bc-icon.listening { animation: none; } }
+
+/* whiteboard panel */
+.bc-wb { border-top: 1px solid var(--border); padding: 0.75rem; }
+.bc-wb canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  touch-action: none;
+  cursor: crosshair;
+}
+.bc-wb-row { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.6rem; }
+.bc-wb-btn { font-size: 0.8rem; padding: 0.45rem 0.9rem; }
+
+/* pending-drawing strip above the input */
+.bc-attach {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.bc-attach img {
+  width: 46px;
+  height: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.bc-attach button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+.bc-attach button:hover { color: var(--accent); }
+
+/* a drawing inside your sent bubble */
+.bc-user-img {
+  display: block;
+  width: 170px;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid var(--bubble-border);
+  border-radius: 8px;
+  margin-bottom: 0.35rem;
+}
+
 .bc-form {
   display: flex;
   align-items: flex-end;

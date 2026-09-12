@@ -79,10 +79,19 @@ function providers(env) {
             headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
             body: JSON.stringify({
               system_instruction: { parts: [{ text: system }] },
-              contents: messages.map((m) => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.content }],
-              })),
+              contents: messages.map((m) => {
+                const parts = [{ text: m.content }];
+                if (m.image) {
+                  const [head, data] = m.image.split(',');
+                  parts.push({
+                    inline_data: {
+                      mime_type: head.includes('jpeg') ? 'image/jpeg' : 'image/png',
+                      data,
+                    },
+                  });
+                }
+                return { role: m.role === 'assistant' ? 'model' : 'user', parts };
+              }),
               generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS, temperature: 0.8 },
             }),
           }
@@ -235,7 +244,9 @@ export default {
       return json({ error: 'bad_request' }, 400, origin);
     }
 
-    // sanitize history: roles, sizes, count
+    // sanitize history: roles, sizes, count; a whiteboard image may ride on
+    // the FINAL user message only (older ones are dropped to keep payloads small)
+    const IMG_RE = /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/;
     let messages = body.messages
       .filter(
         (m) =>
@@ -245,7 +256,19 @@ export default {
           m.content.trim().length > 0
       )
       .slice(-MAX_MESSAGES)
-      .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) }));
+      .map((m) => {
+        const out = { role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) };
+        if (
+          m.role === 'user' &&
+          typeof m.image === 'string' &&
+          m.image.length < 1_800_000 &&
+          IMG_RE.test(m.image)
+        ) {
+          out.image = m.image;
+        }
+        return out;
+      });
+    for (let i = 0; i < messages.length - 1; i++) delete messages[i].image;
     while (
       messages.length > 1 &&
       messages.reduce((n, m) => n + m.content.length, 0) > MAX_TOTAL_CHARS
@@ -256,8 +279,11 @@ export default {
       return json({ error: 'bad_request' }, 400, origin);
     }
 
+    // a message carrying a drawing can only go to a provider that can see it
+    const hasImage = messages.some((m) => m.image);
     for (const p of providers(env)) {
       if (!p.key) continue;
+      if (hasImage && p.name !== 'gemini') continue;
       try {
         const reply = await p.call(p.key, system, messages);
         lastAllFail = 0;
@@ -266,6 +292,10 @@ export default {
         // quota hit, model gone, or provider down — fall through to the next
         console.log(`provider ${p.name} failed: ${e.message}`);
       }
+    }
+    if (hasImage) {
+      // text chat may still be fine — don't put the whole bot to rest
+      return json({ error: 'image_unavailable' }, 503, origin);
     }
     lastAllFail = Date.now();
     return json({ error: 'resting' }, 503, origin);
