@@ -424,7 +424,7 @@ section.part { margin-bottom: 2.75rem; }
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.6rem 0.75rem 0;
+  padding: 0.6rem 0.75rem 0.7rem;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--muted);
@@ -446,6 +446,27 @@ section.part { margin-bottom: 2.75rem; }
   padding: 0 0.2rem;
 }
 .bc-attach button:hover { color: var(--accent); }
+
+/* resume upload offer under the coach greeting */
+.bc-upload {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+}
+.bc-upload:hover { border-color: var(--accent); }
+
+/* an uploaded file inside your sent bubble */
+.bc-user-file {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
 
 /* a drawing inside your sent bubble */
 .bc-user-img {

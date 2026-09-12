@@ -71,7 +71,7 @@ Never ask for private personal information.`,
 
   coach: `You are an experienced interviewer running a practice session, embedded in a site that teaches people to build their own AI interview coach. Any field: nursing, retail, law, teaching, software, grad school. You are tough but fair — the visitor succeeds because you tell them the truth.
 
-Setup: you need the job or program, a couple of background highlights, and their weak spots. If any are missing, ask once, briefly. If they give partial information, make a reasonable assumption, state it in one short line ("I'll assume entry level — correct me anytime"), and move on. Never interrogate.
+Setup: you need the job or program, a couple of background highlights, and their weak spots. If any are missing, ask once, briefly. If they give partial information, make a reasonable assumption, state it in one short line ("I'll assume entry level — correct me anytime"), and move on. Never interrogate. If they upload or paste a resume, treat it as their background: draw questions from specific items on it, and never recite it back to them.
 
 Opening the session: set the stage in one or two natural sentences, the way a real interviewer opens — what kinds of questions this role usually gets (their background and experience, plus the knowledge and skills of their field) and that you'll give honest feedback along the way. Never announce an exact question count; "some questions" is how a person talks. Then, before the first interview question, ask how they want to practice: technical questions for their field (general, or a specific area — for a developer that might be coding in general or specific algorithms), behavioral questions about their background and experience, or a mix. Default to a mix if they have no preference.
 
@@ -112,7 +112,7 @@ function providers(env) {
                   const [head, data] = m.image.split(',');
                   parts.push({
                     inline_data: {
-                      mime_type: head.includes('jpeg') ? 'image/jpeg' : 'image/png',
+                      mime_type: head.slice(5, head.indexOf(';')),
                       data,
                     },
                   });
@@ -277,7 +277,7 @@ export default {
 
     // sanitize history: roles, sizes, count; a whiteboard image may ride on
     // the FINAL user message only (older ones are dropped to keep payloads small)
-    const IMG_RE = /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/;
+    const IMG_RE = /^data:(?:image\/(?:png|jpeg)|application\/pdf);base64,[A-Za-z0-9+/=]+$/;
     let messages = body.messages
       .filter(
         (m) =>
@@ -292,7 +292,7 @@ export default {
         if (
           m.role === 'user' &&
           typeof m.image === 'string' &&
-          m.image.length < 1_800_000 &&
+          m.image.length < 4_000_000 &&
           IMG_RE.test(m.image)
         ) {
           out.image = m.image;

@@ -15,7 +15,7 @@
 
   var GREETINGS = {
     tutor:
-      "I'm the live tutor, tell me what you'd like to learn! Something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
+      "I'm the live tutor, tell me what you want to learn! Something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
     coach:
       "I'm a practice interviewer. To start, tell me something like: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
   };
@@ -256,7 +256,12 @@
   function addUser(text, image) {
     var d = document.createElement('div');
     d.className = 'bc-user';
-    if (image) {
+    if (image && image.indexOf('data:application/pdf') === 0) {
+      var fileChip = document.createElement('span');
+      fileChip.className = 'bc-user-file';
+      fileChip.textContent = '\ud83d\udcc4 resume (PDF)';
+      d.appendChild(fileChip);
+    } else if (image) {
       var img = document.createElement('img');
       img.className = 'bc-user-img';
       img.src = image;
@@ -320,6 +325,45 @@
     var greeting = GREETINGS[bot] || GREETINGS.tutor;
     addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
+    if (multimodal) {
+      var up = document.createElement('div');
+      var upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'bc-upload';
+      upBtn.textContent = 'or click here to upload your resume';
+      var fileIn = document.createElement('input');
+      fileIn.type = 'file';
+      fileIn.accept = '.pdf,.png,.jpg,.jpeg,.txt';
+      fileIn.hidden = true;
+      upBtn.addEventListener('click', function () { fileIn.click(); });
+      fileIn.addEventListener('change', function () {
+        var f = fileIn.files && fileIn.files[0];
+        if (!f) return;
+        if (f.size > 3 * 1024 * 1024) {
+          addBot('That file is over 3 MB — export a smaller version and try again.');
+          return;
+        }
+        if (/\.txt$/i.test(f.name) || f.type === 'text/plain') {
+          f.text().then(function (t) {
+            input.value = 'Here is my resume:\n' + t.slice(0, 3500);
+            up.remove();
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+          });
+          return;
+        }
+        var rd = new FileReader();
+        rd.onload = function () {
+          pendingImage = rd.result; // a PDF or image rides the drawing rails
+          input.value = 'Here is my resume. Use it as my background for this interview.';
+          up.remove();
+          form.dispatchEvent(new Event('submit', { cancelable: true }));
+        };
+        rd.readAsDataURL(f);
+      });
+      up.appendChild(upBtn);
+      up.appendChild(fileIn);
+      msgs.appendChild(up);
+    }
   }
 
   if (!ENDPOINT) {
