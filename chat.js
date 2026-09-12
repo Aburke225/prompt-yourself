@@ -15,7 +15,7 @@
 
   var GREETINGS = {
     tutor:
-      "I'm the tutor, tell me what you want to learn! Something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
+      "I'm the tutor. To start, tell me something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
     coach:
       "I'm a practice interviewer. To start, tell me something like: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
   };
