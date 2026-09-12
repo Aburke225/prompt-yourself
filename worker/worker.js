@@ -25,6 +25,31 @@ const MAX_MESSAGE_CHARS = 4000;
 const MAX_TOTAL_CHARS = 20000;
 const MAX_OUTPUT_TOKENS = 1024;
 
+// Live prompts are fetched from the site (prompts.json in this repo) and
+// cached ~5 minutes, so prompt edits ship with a git push — no re-paste.
+// The built-in copies below are the fallback if the fetch ever fails.
+const PROMPTS_URL = 'https://aburke225.github.io/prompt-yourself/prompts.json';
+const PROMPTS_TTL_MS = 5 * 60 * 1000;
+let promptCache = { at: 0, data: null };
+async function getPrompts() {
+  const now = Date.now();
+  if (promptCache.data && now - promptCache.at < PROMPTS_TTL_MS) return promptCache.data;
+  try {
+    const res = await fetch(PROMPTS_URL, { cf: { cacheTtl: 240 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.tutor === 'string' && typeof data.coach === 'string') {
+        promptCache = { at: now, data };
+        return data;
+      }
+    }
+  } catch (e) {
+    console.log('prompt fetch failed: ' + e.message);
+  }
+  promptCache.at = now; // don't refetch on every request while it's failing
+  return promptCache.data || SYSTEM_PROMPTS;
+}
+
 const SYSTEM_PROMPTS = {
   tutor: `You are a patient, professional tutor embedded in a site about learning any topic with AI. The visitor may want to learn anything: budgeting, anatomy, algebra, wine, plumbing, programming.
 
@@ -241,10 +266,14 @@ export default {
       return json({ error: 'bad_json' }, 400, origin);
     }
 
-    const system = SYSTEM_PROMPTS[body.bot];
-    if (!system || !Array.isArray(body.messages) || body.messages.length === 0) {
+    if (
+      (body.bot !== 'tutor' && body.bot !== 'coach') ||
+      !Array.isArray(body.messages) ||
+      body.messages.length === 0
+    ) {
       return json({ error: 'bad_request' }, 400, origin);
     }
+    const system = (await getPrompts())[body.bot];
 
     // sanitize history: roles, sizes, count; a whiteboard image may ride on
     // the FINAL user message only (older ones are dropped to keep payloads small)
