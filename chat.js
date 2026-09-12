@@ -167,6 +167,57 @@
     attachRow.hidden = true;
     attachRow.innerHTML = '';
   }
+  // one pipeline for resume files, fed by the upload button and drag-and-drop
+  var uploadRow = null;
+  function handleResumeFile(f) {
+    if (!f || !form.isConnected) return;
+    if (f.size > 3 * 1024 * 1024) {
+      addBot('That file is over 3 MB — export a smaller version and try again.');
+      return;
+    }
+    function finish() {
+      if (uploadRow) { uploadRow.remove(); uploadRow = null; }
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+    if (/\.txt$/i.test(f.name) || f.type === 'text/plain') {
+      f.text().then(function (t) {
+        input.value = 'Here is my resume:\n' + t.slice(0, 3500);
+        finish();
+      });
+      return;
+    }
+    if (!/pdf|png|jpe?g/i.test(f.type + ' ' + f.name)) {
+      addBot('I can read PDF, PNG, JPG, or TXT resumes.');
+      return;
+    }
+    var rd = new FileReader();
+    rd.onload = function () {
+      pendingImage = rd.result; // a PDF or image rides the drawing rails
+      input.value = 'Here is my resume. Use it as my background for this interview.';
+      finish();
+    };
+    rd.readAsDataURL(f);
+  }
+  if (multimodal) {
+    var dragDepth = 0;
+    host.addEventListener('dragenter', function (e) {
+      e.preventDefault();
+      dragDepth++;
+      host.classList.add('bc-dropping');
+    });
+    host.addEventListener('dragover', function (e) { e.preventDefault(); });
+    host.addEventListener('dragleave', function () {
+      dragDepth--;
+      if (dragDepth <= 0) { dragDepth = 0; host.classList.remove('bc-dropping'); }
+    });
+    host.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dragDepth = 0;
+      host.classList.remove('bc-dropping');
+      handleResumeFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+    });
+  }
+
   wbAttach.addEventListener('click', function () {
     pendingImage = canvas.toDataURL('image/png');
     wb.hidden = true;
@@ -331,38 +382,19 @@
       upBtn.type = 'button';
       upBtn.className = 'bc-upload';
       upBtn.textContent = 'or click here to upload your resume';
+      upBtn.textContent = 'or click here to upload your resume — or drag it into the chat';
       var fileIn = document.createElement('input');
       fileIn.type = 'file';
       fileIn.accept = '.pdf,.png,.jpg,.jpeg,.txt';
       fileIn.hidden = true;
       upBtn.addEventListener('click', function () { fileIn.click(); });
       fileIn.addEventListener('change', function () {
-        var f = fileIn.files && fileIn.files[0];
-        if (!f) return;
-        if (f.size > 3 * 1024 * 1024) {
-          addBot('That file is over 3 MB — export a smaller version and try again.');
-          return;
-        }
-        if (/\.txt$/i.test(f.name) || f.type === 'text/plain') {
-          f.text().then(function (t) {
-            input.value = 'Here is my resume:\n' + t.slice(0, 3500);
-            up.remove();
-            form.dispatchEvent(new Event('submit', { cancelable: true }));
-          });
-          return;
-        }
-        var rd = new FileReader();
-        rd.onload = function () {
-          pendingImage = rd.result; // a PDF or image rides the drawing rails
-          input.value = 'Here is my resume. Use it as my background for this interview.';
-          up.remove();
-          form.dispatchEvent(new Event('submit', { cancelable: true }));
-        };
-        rd.readAsDataURL(f);
+        handleResumeFile(fileIn.files && fileIn.files[0]);
       });
       up.appendChild(upBtn);
       up.appendChild(fileIn);
       msgs.appendChild(up);
+      uploadRow = up;
     }
   }
 

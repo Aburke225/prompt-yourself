@@ -447,6 +447,9 @@ section.part { margin-bottom: 2.75rem; }
 }
 .bc-attach button:hover { color: var(--accent); }
 
+/* the whole chat is a drop target for a resume file */
+.bot-chat.bc-dropping { outline: 2px dashed var(--accent); outline-offset: -3px; }
+
 /* resume upload offer under the coach greeting */
 .bc-upload {
   font-family: var(--font-mono);
