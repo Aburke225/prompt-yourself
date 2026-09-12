@@ -15,9 +15,9 @@
 
   var GREETINGS = {
     tutor:
-      "I'm the tutor. To start, tell me something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
+      "I'm the tutor bot. To start, tell me something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
     coach:
-      "I'm a practice interviewer. To start, tell me something like: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
+      "I'm the interview bot. To start, tell me something like: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
   };
 
   // where the guide lives (its own page) — the resting button points there
@@ -280,7 +280,7 @@
 
   function setStatus(live) {
     dot.className = 'bc-dot' + (live ? '' : ' resting');
-    headLabel.textContent = live ? 'live practice ' + noun : 'practice ' + noun + ' · resting';
+    headLabel.textContent = live ? 'session active' : 'session resting';
   }
 
   function render(text) {
