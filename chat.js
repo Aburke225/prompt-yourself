@@ -136,7 +136,7 @@
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
     drawing = true;
-    canvas.setPointerCapture(e.pointerId);
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
     var p = wbPoint(e);
     ctx.beginPath();
     ctx.moveTo(p[0], p[1]);
