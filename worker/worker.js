@@ -228,8 +228,100 @@ function json(body, status, origin) {
   });
 }
 
+// ---------- burke-bot game capture (keyed; only flagged games are stored) ----------
+// POST /chess/game   { key, id, color, result, moves[], ts }  -> stored in KV
+// GET  /chess/games?key=...                                   -> every stored game
+// Needs a CHESS_GAMES KV binding and a CHESS_KEY secret; until both exist the
+// routes answer 503 and the rest of the worker is untouched. Games live in
+// monthly buckets (one KV value per month) so reads stay far under the free
+// plan's 50-subrequests-per-request cap.
+async function handleChess(request, env, url) {
+  const origin = request.headers.get('origin') || '';
+  const cors = ALLOWED_ORIGINS.includes(origin) ? corsHeaders(origin) : {};
+  const reply = (body, status) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json', ...cors },
+    });
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: cors });
+  }
+  if (!env.CHESS_GAMES || !env.CHESS_KEY) {
+    return reply({ error: 'not_configured' }, 503);
+  }
+
+  if (url.pathname === '/chess/game' && request.method === 'POST') {
+    if (!ALLOWED_ORIGINS.includes(origin)) {
+      return new Response('forbidden', { status: 403 });
+    }
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return reply({ error: 'bad_json' }, 400);
+    }
+    if (body.key !== env.CHESS_KEY) {
+      return reply({ error: 'bad_key' }, 403);
+    }
+    if (
+      !Array.isArray(body.moves) ||
+      body.moves.length < 6 ||
+      body.moves.length > 400 ||
+      !['w', 'b'].includes(body.color) ||
+      !['w', 'l', 'd'].includes(body.result)
+    ) {
+      return reply({ error: 'bad_game' }, 400);
+    }
+    const ts = Number(body.ts) || Date.now();
+    const id = String(body.id || ts).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40) || String(ts);
+    const bucket = 'games:' + new Date(ts).toISOString().slice(0, 7);
+    let arr;
+    try {
+      arr = JSON.parse((await env.CHESS_GAMES.get(bucket)) || '[]');
+    } catch {
+      arr = [];
+    }
+    if (!arr.some((g) => g.id === id)) {
+      arr.push({
+        id,
+        color: body.color,
+        result: body.result,
+        moves: body.moves.slice(0, 400).map((m) => String(m).slice(0, 5)),
+        ts,
+      });
+      await env.CHESS_GAMES.put(bucket, JSON.stringify(arr));
+    }
+    return reply({ ok: true, stored: arr.length }, 200);
+  }
+
+  if (url.pathname === '/chess/games' && request.method === 'GET') {
+    if (url.searchParams.get('key') !== env.CHESS_KEY) {
+      return reply({ error: 'bad_key' }, 403);
+    }
+    const games = [];
+    let cursor;
+    do {
+      const page = await env.CHESS_GAMES.list({ prefix: 'games:', cursor });
+      for (const k of page.keys) {
+        try {
+          games.push(...JSON.parse((await env.CHESS_GAMES.get(k.name)) || '[]'));
+        } catch {}
+      }
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+    games.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    return reply(games, 200);
+  }
+
+  return reply({ error: 'not_found' }, 404);
+}
+
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/chess/')) {
+      return handleChess(request, env, url);
+    }
     const origin = request.headers.get('origin') || '';
     if (!ALLOWED_ORIGINS.includes(origin)) {
       return new Response('forbidden', { status: 403 });
