@@ -2,7 +2,7 @@ name: check models
 
 on:
   schedule:
-    - cron: "0 10 * * *" # daily, 10:00 UTC = 6am EDT / 5am EST — after the US Pacific business day, before East Coast mornings
+    - cron: "30 3 * * *" # daily, 03:30 UTC = 7:30-8:30pm Pacific — right after the PT business day, when providers actually shut models off
   workflow_dispatch:
 
 permissions:
