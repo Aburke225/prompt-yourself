@@ -149,7 +149,7 @@ function providers(env) {
         openAiStyle(
           'https://api.groq.com/openai/v1/chat/completions',
           key,
-          env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+          env.GROQ_MODEL || 'openai/gpt-oss-120b',
           system,
           messages
         ),
@@ -161,7 +161,7 @@ function providers(env) {
         openAiStyle(
           'https://openrouter.ai/api/v1/chat/completions',
           key,
-          env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
+          env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free',
           system,
           messages
         ),
@@ -192,6 +192,7 @@ const ipHits = new Map(); // ip -> [timestamps]
 let dayStamp = '';
 let dayCount = 0;
 let lastAllFail = 0; // when every provider last failed; page checks via GET
+const lastProviderErrors = []; // last few failures, visible via the keyed /debug route
 const RESTING_WINDOW_MS = 10 * 60 * 1000;
 
 // check without recording a hit — used by the GET status endpoint
@@ -333,6 +334,28 @@ export default {
     if (url.pathname.startsWith('/chess/')) {
       return handleChess(request, env, url);
     }
+    if (url.pathname === '/debug') {
+      if (!env.CHESS_KEY || url.searchParams.get('key') !== env.CHESS_KEY) {
+        return new Response('forbidden', { status: 403 });
+      }
+      return new Response(
+        JSON.stringify({
+          resting: Date.now() - lastAllFail < RESTING_WINDOW_MS,
+          keys: {
+            gemini: !!env.GEMINI_API_KEY,
+            groq: !!env.GROQ_API_KEY,
+            openrouter: !!env.OPENROUTER_API_KEY,
+          },
+          models: {
+            gemini: env.GEMINI_MODEL || 'gemini-flash-lite-latest',
+            groq: env.GROQ_MODEL || 'openai/gpt-oss-120b',
+            openrouter: env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free',
+          },
+          recent_provider_errors: lastProviderErrors,
+        }, null, 1),
+        { headers: { 'content-type': 'application/json' } }
+      );
+    }
     const origin = request.headers.get('origin') || '';
     if (!ALLOWED_ORIGINS.includes(origin)) {
       return new Response('forbidden', { status: 403 });
@@ -425,6 +448,8 @@ export default {
       } catch (e) {
         // quota hit, model gone, or provider down — fall through to the next
         console.log(`provider ${p.name} failed: ${e.message}`);
+        lastProviderErrors.push({ at: new Date().toISOString(), provider: p.name, error: String(e.message).slice(0, 200) });
+        if (lastProviderErrors.length > 12) lastProviderErrors.shift();
       }
     }
     if (hasImage) {
