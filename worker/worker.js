@@ -38,10 +38,21 @@ async function getPrompts() {
     const res = await fetch(PROMPTS_URL, { cf: { cacheTtl: 240 } });
     if (res.ok) {
       const data = await res.json();
-      if (data && typeof data.tutor === 'string' && typeof data.coach === 'string') {
+      // a fetched prompt must look like prose, not leaked source: a publish
+      // accident once appended worker code to a prompt, so garbage now falls
+      // back to the built-ins instead of shipping for five minutes at a time
+      const sane = (p) =>
+        typeof p === 'string' &&
+        p.length > 200 &&
+        p.length < 12000 &&
+        !p.includes('function ') &&
+        !p.includes('=>') &&
+        !p.includes('`');
+      if (data && sane(data.tutor) && sane(data.coach)) {
         promptCache = { at: now, data };
         return data;
       }
+      console.log('fetched prompts failed sanity check - using built-ins');
     }
   } catch (e) {
     console.log('prompt fetch failed: ' + e.message);
