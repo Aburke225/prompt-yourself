@@ -2,7 +2,7 @@ name: check models
 
 on:
   schedule:
-    - cron: "47 13 * * *" # daily, 13:47 UTC
+    - cron: "0 10 * * *" # daily, 10:00 UTC = 6am EDT / 5am EST — after the US Pacific business day, before East Coast mornings
   workflow_dispatch:
 
 permissions:
