@@ -2,12 +2,13 @@
 """Daily model-health check: free-tier model IDs rot, so verify each provider's
 configured model and replace dead ones automatically.
 
-Three tiers per provider:
- 1. keep the current model if it is alive and answers a 1-token ping;
- 2. otherwise take the first ALIVE entry from a ranked preference list;
- 3. if the whole list is dead, pick from the provider's live catalog by
-    heuristics (skip safety/embedding/code-oriented models, prefer large
-    context) — the bots never go dark just because opinions went stale.
+Fully dynamic — no hard-coded model list to rot:
+ 1. keep the current model while it is alive and answers a 1-token ping
+    (stability: never churn a healthy model);
+ 2. when it dies, rank the provider's LIVE catalog by heuristics — filter
+    out non-chat models by name (safety, embeddings, audio, vision, preview,
+    reasoning spew), then prefer bigger parameter counts and contexts — and
+    take the first candidate that passes a real ping.
 
 Writes models.json when anything changes and a human-readable report to
 model-check-report.txt. Providers whose API key is absent are checked as far
@@ -24,17 +25,24 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS = os.path.join(ROOT, "models.json")
 REPORT = os.path.join(ROOT, "model-check-report.txt")
 
-PREFERRED = {
-    "gemini": ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"],
-    "groq": ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile", "qwen/qwen3.6-27b"],
-    "openrouter": [
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "google/gemma-4-31b-it:free",
-        "nex-agi/nex-n2.5-pro:free",
-        "nvidia/nemotron-3-ultra-550b-a55b:free",
-    ],
-}
-BAD_WORDS = ("safety", "guard", "embed", "whisper", "tts", "content", "-code", "code:", "vision")
+import re
+
+BAD_WORDS = ("safety", "guard", "embed", "whisper", "tts", "content", "-code", "code:",
+             "vision", "audio", "image", "imagen", "veo", "live", "ocr", "rerank",
+             "moderation", "preview", "reasoning", "thinking", "compound", "exp")
+
+
+def params_of(model_id):
+    """Biggest parameter count named in the id, in billions (0 if unstated)."""
+    sizes = re.findall(r"(\d+(?:\.\d+)?)b\b", model_id.lower())
+    return max((float(x) for x in sizes), default=0.0)
+
+
+def rank_gemini(mid):
+    """Free-tier quota ordering: lite-latest aliases first (they self-update),
+    then flash; pro burns free quota fastest so it ranks last."""
+    m = mid.lower()
+    return (("lite" in m and "latest" in m, "latest" in m, "lite" in m, "flash" in m), mid)
 
 report = []
 
@@ -116,36 +124,36 @@ def dynamic_pick(provider, live):
     good = [(mid, ctx) for mid, ctx in live.items()
             if not any(b in mid.lower() for b in BAD_WORDS)
             and (provider != "openrouter" or mid.endswith(":free"))]
-    good.sort(key=lambda x: -x[1])
-    return [mid for mid, _ in good[:4]]
+    if provider == "gemini":
+        good.sort(key=lambda x: rank_gemini(x[0]), reverse=True)
+    else:
+        good.sort(key=lambda x: (-params_of(x[0]), -x[1]))
+    return [mid for mid, _ in good[:5]]
 
 
 def choose(provider, current, keys):
     live = catalog(provider, keys)
-    candidates = [current] + [c for c in PREFERRED[provider] if c != current]
     if live is not None:
-        alive = [c for c in candidates if c in live]
-        emergency = [c for c in dynamic_pick(provider, live) if c not in alive]
-        pool = alive + emergency
-        if current in live and ping(provider, current, keys) in ("ok", "skip"):
+        # gemini "latest" aliases may not appear in the catalog by that name;
+        # for them the ping is the real liveness signal
+        current_alive = current in live or (provider == "gemini" and "latest" in current)
+        if current_alive and ping(provider, current, keys) in ("ok", "skip"):
             return current, "healthy"
-        log(f"{provider}: '{current}' is gone or failing - hunting a replacement")
-        for cand in pool:
+        log(f"{provider}: '{current}' is gone or failing - picking from the live catalog")
+        for cand in dynamic_pick(provider, live):
             if cand == current:
                 continue
-            if ping(provider, cand, keys) in ("ok",) or (not keys.get(provider) and cand in live):
+            if ping(provider, cand, keys) == "ok" or (not keys.get(provider) and cand in live):
                 return cand, "replaced"
-        log(f"PROBLEM {provider}: no live candidate found (checked {len(pool)})")
+        log(f"PROBLEM {provider}: nothing in the live catalog passed verification")
         return current, "stuck"
-    # no catalog access: ping is the only signal; never churn without evidence
+    # no catalog access and maybe no key: never churn without evidence
     st = ping(provider, current, keys)
-    if st in ("ok", "skip"):
-        return current, "healthy" if st == "ok" else "unverified (no key)"
-    log(f"{provider}: '{current}' failed its ping - trying preferences")
-    for cand in PREFERRED[provider]:
-        if cand != current and ping(provider, cand, keys) == "ok":
-            return cand, "replaced"
-    log(f"PROBLEM {provider}: current model failing and no candidate pings")
+    if st == "ok":
+        return current, "healthy"
+    if st == "skip":
+        return current, "unverified (no key)"
+    log(f"PROBLEM {provider}: current model failing and no catalog access to pick from")
     return current, "stuck"
 
 
