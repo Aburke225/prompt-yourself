@@ -30,6 +30,27 @@ const MAX_OUTPUT_TOKENS = 1024;
 // The built-in copies below are the fallback if the fetch ever fails.
 const PROMPTS_URL = 'https://aburke225.github.io/prompt-yourself/prompts.json';
 const PROMPTS_TTL_MS = 5 * 60 * 1000;
+const MODELS_URL = 'https://aburke225.github.io/prompt-yourself/models.json';
+let modelCache = { at: 0, data: null };
+async function getModels() {
+  const now = Date.now();
+  if (modelCache.data && now - modelCache.at < PROMPTS_TTL_MS) return modelCache.data;
+  try {
+    const res = await fetch(MODELS_URL, { cf: { cacheTtl: 240 } });
+    if (res.ok) {
+      const data = await res.json();
+      const sane = (m) => typeof m === 'string' && m.length > 3 && m.length < 100 && !/[\s`]/.test(m);
+      if (data && sane(data.gemini) && sane(data.groq) && sane(data.openrouter)) {
+        modelCache = { at: now, data };
+        return data;
+      }
+    }
+  } catch (e) {
+    console.log('models fetch failed: ' + e.message);
+  }
+  modelCache.at = now; // don't refetch on every request while it's failing
+  return modelCache.data || null;
+}
 let promptCache = { at: 0, data: null };
 async function getPrompts() {
   const now = Date.now();
@@ -103,13 +124,13 @@ Never ask for or encourage sharing of private personal information (ID numbers, 
 };
 
 // Providers are tried in order; any without a configured key is skipped.
-function providers(env) {
+function providers(env, models) {
   return [
     {
       name: 'gemini',
       key: env.GEMINI_API_KEY,
       call: async (key, system, messages) => {
-        const model = env.GEMINI_MODEL || 'gemini-flash-lite-latest';
+        const model = env.GEMINI_MODEL || (models && models.gemini) || 'gemini-flash-lite-latest';
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           {
@@ -149,7 +170,7 @@ function providers(env) {
         openAiStyle(
           'https://api.groq.com/openai/v1/chat/completions',
           key,
-          env.GROQ_MODEL || 'openai/gpt-oss-120b',
+          env.GROQ_MODEL || (models && models.groq) || 'openai/gpt-oss-120b',
           system,
           messages
         ),
@@ -161,7 +182,7 @@ function providers(env) {
         openAiStyle(
           'https://openrouter.ai/api/v1/chat/completions',
           key,
-          env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free',
+          env.OPENROUTER_MODEL || (models && models.openrouter) || 'nvidia/nemotron-3-super-120b-a12b:free',
           system,
           messages
         ),
@@ -346,11 +367,15 @@ export default {
             groq: !!env.GROQ_API_KEY,
             openrouter: !!env.OPENROUTER_API_KEY,
           },
-          models: {
-            gemini: env.GEMINI_MODEL || 'gemini-flash-lite-latest',
-            groq: env.GROQ_MODEL || 'openai/gpt-oss-120b',
-            openrouter: env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free',
-          },
+          models: await (async () => {
+            const m = await getModels();
+            return {
+              gemini: env.GEMINI_MODEL || (m && m.gemini) || 'gemini-flash-lite-latest',
+              groq: env.GROQ_MODEL || (m && m.groq) || 'openai/gpt-oss-120b',
+              openrouter: env.OPENROUTER_MODEL || (m && m.openrouter) || 'nvidia/nemotron-3-super-120b-a12b:free',
+              fetched_config: !!m,
+            };
+          })(),
           recent_provider_errors: lastProviderErrors,
         }, null, 1),
         { headers: { 'content-type': 'application/json' } }
@@ -438,7 +463,8 @@ export default {
 
     // a message carrying a drawing can only go to a provider that can see it
     const hasImage = messages.some((m) => m.image);
-    for (const p of providers(env)) {
+    const models = await getModels();
+    for (const p of providers(env, models)) {
       if (!p.key) continue;
       if (hasImage && p.name !== 'gemini') continue;
       try {

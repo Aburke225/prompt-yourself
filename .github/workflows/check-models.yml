@@ -1,0 +1,46 @@
+name: check models
+
+on:
+  schedule:
+    - cron: "47 13 * * *" # daily, 13:47 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: verify each provider's model, replace dead ones
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python3 scripts/check_models.py
+
+      - name: publish the new config and leave a paper trail
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if grep -q "^CHANGED" model-check-report.txt; then
+            git config user.name "Andrew Burke"
+            git config user.email "aburke225@berkeley.edu"
+            git add models.json
+            git commit -m "models: automatic replacement of a dead provider model"
+            git push
+            curl -s -X POST \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true
+            gh issue create --title "Model auto-replaced $(date +%F)" \
+              --body "$(cat model-check-report.txt)" || true
+          elif grep -q "PROBLEM" model-check-report.txt; then
+            gh issue create --title "Model check needs attention $(date +%F)" \
+              --body "$(cat model-check-report.txt)" || true
+          else
+            echo "all models healthy"
+          fi

@@ -1,0 +1,6 @@
+{
+ "gemini": "gemini-flash-lite-latest",
+ "groq": "openai/gpt-oss-120b",
+ "openrouter": "nvidia/nemotron-3-super-120b-a12b:free",
+ "updated": "2026-09-12"
+}
