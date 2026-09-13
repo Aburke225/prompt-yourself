@@ -278,9 +278,13 @@
     });
   }
 
+  var lastProvider = '';
+
   function setStatus(live) {
     dot.className = 'bc-dot' + (live ? '' : ' resting');
-    headLabel.textContent = live ? 'session active' : 'session resting';
+    headLabel.textContent = live
+      ? 'session active' + (lastProvider ? ' (' + lastProvider + ')' : '')
+      : 'session resting';
   }
 
   function render(text) {
@@ -468,6 +472,10 @@
       .then(function (r) {
         typing.remove();
         if (r.ok && r.data.reply) {
+          if (r.data.provider) {
+            lastProvider = r.data.provider;
+            setStatus(true);
+          }
           addBot(r.data.reply);
           history.push({ role: 'assistant', content: r.data.reply });
         } else if (r.status === 429) {
