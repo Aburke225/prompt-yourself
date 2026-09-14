@@ -9,9 +9,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="styles.css?v=19">
   <script>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-  <script src="theme.js?v=2" defer></script>
+  <script>
+    // boot veil: hide the page until the layout settles (fonts swapping in,
+    // script-built content arriving) so it fades in as one unit. The page
+    // script lifts it when ready; this timeout is the never-stuck fallback.
+    document.documentElement.classList.add('booting');
+    setTimeout(function () { document.documentElement.classList.remove('booting'); }, 3000);
+  </script>
+  <script src="theme.js?v=3" defer></script>
 </head>
 <body>
   <div class="wrap">

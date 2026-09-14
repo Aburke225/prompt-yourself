@@ -50,7 +50,12 @@ body {
   font-family: var(--font-body);
   font-size: 1.0625rem;
   line-height: 1.7;
+  opacity: 1;
+  transition: opacity 0.18s ease;
 }
+/* boot veil: each page's inline head script adds .booting before first
+   paint; theme.js lifts it once the fonts land, fading the page in whole */
+.booting body { opacity: 0; transition: none; }
 
 .wrap {
   max-width: var(--measure);

@@ -6,6 +6,21 @@
 (function () {
   var root = document.documentElement;
 
+  // lift the boot veil (each page's inline head script adds .booting before
+  // first paint): theme.js is deferred, so the page's own script has built
+  // its content by now - wait only for the webfonts, capped so a slow font
+  // CDN can't hold the page; the inline 3s timeout is the fallback. This
+  // runs before the nav check below so every page gets its reveal.
+  // removed directly, not in requestAnimationFrame: rAF callbacks do not run
+  // in a hidden tab, which would hold the veil for anyone who opens a page
+  // in a background tab until the inline fallback fires
+  var lift = function () { root.classList.remove('booting'); };
+  try {
+    if (document.fonts && document.fonts.ready) {
+      Promise.race([document.fonts.ready, new Promise(function (r) { setTimeout(r, 1200); })]).then(lift, lift);
+    } else { lift(); }
+  } catch (e) { lift(); }
+
   function stored() {
     try { return localStorage.getItem('theme'); } catch (e) { return null; }
   }
