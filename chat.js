@@ -40,7 +40,9 @@
   var input = document.createElement('textarea');
   input.className = 'bc-input';
   input.rows = 1;
-  input.placeholder = 'Type your message…';
+  // one word - the long version wrapped and clipped inside the narrow
+  // mobile input
+  input.placeholder = 'Message…';
   input.setAttribute('aria-label', 'Your message');
   var send = document.createElement('button');
   send.type = 'submit';
