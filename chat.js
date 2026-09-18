@@ -46,9 +46,8 @@
       "I'm the tutor bot, and we've done this before. I'll pick up from what was " +
       "still unfinished last time. Name a new topic instead if you'd rather move on.",
     coach:
-      "I'm the interview bot, and we've done this before. I'll skip the questions " +
-      "you've already had and go after the parts we haven't covered. Say so if what " +
-      "you're interviewing for has changed.",
+      "Great to see you again! Let me know if what you're interviewing for has " +
+      "changed, otherwise I'll pick up where we left off.",
   };
 
   // where the guide lives (its own page) — the resting button points there
@@ -1040,8 +1039,7 @@
       var upBtn = document.createElement('button');
       upBtn.type = 'button';
       upBtn.className = 'bc-upload';
-      upBtn.textContent = 'or click here to upload your resume';
-      upBtn.textContent = 'click here to upload your resume — or drag it into the chat';
+      upBtn.textContent = 'or save time by dropping your resume here';
       var fileIn = document.createElement('input');
       fileIn.type = 'file';
       fileIn.accept = '.pdf,.png,.jpg,.jpeg,.txt';
