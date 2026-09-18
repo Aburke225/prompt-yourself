@@ -108,9 +108,24 @@ function leakCheck(clean) {
   return out;
 }
 
-function check(a, got) {
+function check(a, got, allClean) {
   const fails = [];
   const { raw, clean, state, hadMarker } = got;
+  // "Never open two replies in a row the same way" is a promise about a PAIR,
+  // so it cannot be asserted against a single reply - which is why it went
+  // unpinned. Given every reply in the case it is expressible after all.
+  if (a.openings_must_differ && allClean && allClean.length > 1) {
+    const opener = (t) => t.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean).slice(0, 3).join(' ');
+    // three words, not four: "Interest on interest..." twice running is the
+    // skeleton the prompt bans, and a four-word window let it through because
+    // the fourth word happened to differ.
+    for (let i = 1; i < allClean.length; i++) {
+      if (opener(allClean[i]) && opener(allClean[i]) === opener(allClean[i - 1])) {
+        fails.push('openings_must_differ: replies ' + i + ' and ' + (i + 1) +
+          ' both open "' + opener(allClean[i]) + '"');
+      }
+    }
+  }
   // regexes run on the RAW reply so a case can assert on the state line itself;
   // shape assertions run on what the visitor actually sees
   for (const p of a.must_match || []) {
@@ -132,6 +147,19 @@ function check(a, got) {
   }
   if (a.must_end_with_question && !/\?["')\]]*\s*$/.test(clean)) {
     fails.push('must_end_with_question: ends ' + JSON.stringify(clean.slice(-40)));
+  }
+  // The tutor prompt deliberately rotates its ask between a check question,
+  // "explain that back in your own words", and a small applied task - and a
+  // task ends in a full stop. Demanding a question mark would have failed
+  // replies that are doing exactly what they were told, and a suite that
+  // cries wolf gets ignored, which costs more than the case is worth.
+  if (a.must_end_with_ask) {
+    const tail = (clean.split(/(?<=[.!?])\s+/).pop() || '').trim();
+    const isQuestion = /\?["')\]]*\s*$/.test(clean);
+    const isTask = /^(try|work|explain|tell|give|write|say|name|show|describe|walk|calculate|figure|put|use|take|apply|pick|list|add|find|sketch|do|have a go|see if)\b/i.test(tail);
+    if (!isQuestion && !isTask) {
+      fails.push('must_end_with_ask: neither a question nor a task - ends ' + JSON.stringify(tail.slice(-60)));
+    }
   }
   fails.push.apply(fails, leakCheck(clean));   // every case, always
   if (a.must_emit_state && !hadMarker) fails.push('must_emit_state: no <<PY {...}>> found');
@@ -172,6 +200,7 @@ const failures = [];
 console.log(`running ${cases.length} case(s) against ${ENDPOINT}\n`);
 for (const c of cases) {
   const messages = [];
+  const allClean = [];
   let got = null, bailed = '';
   for (let i = 0; i < c.turns.length; i++) {
     const last = i === c.turns.length - 1;
@@ -181,6 +210,7 @@ for (const c of cases) {
     if (r.status === 429) { bailed = 'rate limited (429)'; break; }
     if (!r.ok || !r.reply) { bailed = 'no reply (status ' + r.status + ')'; break; }
     got = takeState(r.reply);
+    allClean.push(got.clean);
     messages[messages.length - 1] = { role: 'user', content: c.turns[i] }; // keep history clean
     messages.push({ role: 'assistant', content: got.clean });
   }
@@ -189,7 +219,7 @@ for (const c of cases) {
     console.log(`SKIP  ${c.id}  ${bailed}`);
     continue;
   }
-  const fails = check(c.assert || {}, got);
+  const fails = check(c.assert || {}, got, allClean);
   if (fails.length) {
     fail++;
     failures.push({ id: c.id, why: c.why, fails, reply: got.clean });

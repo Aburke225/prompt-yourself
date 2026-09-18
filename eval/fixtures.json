@@ -24,13 +24,13 @@
           "(^|\\n)\\s*[-*•]\\s"
         ],
         "max_words": 140,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "must_end_with_ask": true
       }
     },
     {
@@ -51,13 +51,14 @@
           "\\|[^\\n]*\\|"
         ],
         "max_words": 140,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "must_end_with_ask": true,
+        "openings_must_differ": true
       }
     },
     {
@@ -95,7 +96,8 @@
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -125,13 +127,13 @@
           "\\|[^\\n]*\\|"
         ],
         "max_words": 140,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "must_end_with_ask": true
       }
     },
     {
@@ -187,13 +189,13 @@
           "\\|[^\\n]*\\|"
         ],
         "max_words": 140,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "must_end_with_ask": true
       }
     },
     {
@@ -213,13 +215,13 @@
           "\\*"
         ],
         "max_words": 140,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "must_end_with_ask": true
       }
     },
     {
@@ -281,7 +283,8 @@
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -301,13 +304,13 @@
           "\\?[\\s\\S]*\\?"
         ],
         "max_words": 125,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "must_end_with_ask": true
       }
     },
     {
@@ -336,7 +339,8 @@
           "topic",
           "check",
           "misconception"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -437,7 +441,8 @@
           "qid",
           "competency",
           "scores"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -478,7 +483,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -516,7 +522,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -553,7 +560,8 @@
           "qid",
           "competency",
           "scores"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -585,7 +593,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -623,7 +632,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -655,7 +665,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -687,7 +698,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -718,7 +730,8 @@
         "state_must_have": [
           "qid",
           "competency"
-        ]
+        ],
+        "openings_must_differ": true
       }
     },
     {
@@ -736,11 +749,11 @@
           "\\*"
         ],
         "max_words": 140,
-        "must_end_with_question": true,
         "must_emit_state": true,
         "state_must_have": [
           "topic"
-        ]
+        ],
+        "must_end_with_ask": true
       }
     }
   ]
