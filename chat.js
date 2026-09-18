@@ -34,7 +34,7 @@
       "\"The nitrogen cycle, I have a Biology test on Friday.\"",
     coach:
       "I'm the interview bot. Tell me what you're interviewing for and a line on your background, something like: " +
-      "\"Senior backend role, three years as a mid-level engineer.\"",
+      "\"Staff engineer role, four years as a senior backend engineer.\"",
   };
 
   // A returning visitor gets its own greeting rather than the new-visitor one
