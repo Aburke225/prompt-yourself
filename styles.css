@@ -337,6 +337,24 @@ section.part { margin-bottom: 2.75rem; }
 .bc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .bc-dot.resting { background: #D98E04; }
 
+/* The talk button carries the state of the spoken session - talk, listening,
+   thinking, speaking - so the candidate can tell whose turn it is without a
+   second indicator competing with the status strip. The pulse only runs while
+   the session is live. */
+.bc-talk.live {
+  color: var(--accent);
+  border-color: var(--accent);
+  animation: bc-pulse 1.6s ease-in-out infinite;
+}
+@keyframes bc-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* the label already says which turn it is, so the pulse is decoration */
+  .bc-talk.live { animation: none; }
+}
+
 /* The returning candidate's one way out. Quieter than the upload prompt it
    replaces, because it is an escape hatch rather than an invitation: most
    returners are here for the same job they were here for last time. */

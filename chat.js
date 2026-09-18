@@ -432,37 +432,164 @@
   // out loud under a clock is the actual skill being practised, and typing at a
   // silent interviewer trains something else. Tutor stays silent: reading an
   // explanation at your own pace beats having it read to you.
+  // ---------- hands-free conversation ----------
+  // The old control was a voice-on toggle, which read questions aloud while
+  // the candidate still typed and still pressed send. That trains the wrong
+  // thing: a real interview is spoken both ways under a clock, and stopping to
+  // type between answers is the part that does not happen on the day.
+  //
+  // So this is a mode, not a setting. It listens, notices when they have
+  // stopped talking, sends on its own, speaks the reply, and listens again.
+  // Nobody touches the keyboard until they end it. Reading a reply at your own
+  // pace is the better experience everywhere else, so the bot is silent
+  // outside this mode and there is no separate switch for it.
   var TTS = 'speechSynthesis' in window;
-  var voiceOn = false;
-  var voiceBtn = null;
-  if (TTS && multimodal) {
-    try { voiceOn = localStorage.getItem('py-voice') !== 'off'; } catch (e) { voiceOn = true; }
-    voiceBtn = document.createElement('button');
-    voiceBtn.type = 'button';
-    voiceBtn.className = 'bc-head-btn';
-    function paintVoice() {
-      voiceBtn.textContent = voiceOn ? 'voice on' : 'voice off';
-      voiceBtn.setAttribute('aria-pressed', voiceOn ? 'true' : 'false');
-      voiceBtn.title = voiceOn ? 'Stop reading questions aloud' : 'Read questions aloud';
-    }
-    paintVoice();
-    voiceBtn.addEventListener('click', function () {
-      voiceOn = !voiceOn;
-      try { localStorage.setItem('py-voice', voiceOn ? 'on' : 'off'); } catch (e) {}
-      if (!voiceOn) try { window.speechSynthesis.cancel(); } catch (e) {}
-      paintVoice();
-    });
+  var talking = false;      // in a hands-free session
+  var speaking = false;     // the bot has the floor
+  var convoRec = null;
+  var hushTimer = null;
+  // Long enough for a real thinking pause mid-answer, short enough that the
+  // silence does not feel like a dropped call. Behavioural answers are full of
+  // pauses, so this errs generous.
+  var HUSH_MS = 2000;
+  var talkBtn = null;
+
+  function paintTalk(state) {
+    if (!talkBtn) return;
+    talkBtn.textContent = state;
+    talkBtn.classList.toggle('live', talking);
+    talkBtn.title = talking
+      ? 'End the spoken session and go back to typing'
+      : 'Talk to the interviewer out loud, hands free';
   }
-  function speak(text) {
-    if (!TTS || !voiceOn || !multimodal) return;
+
+  function speak(text, done) {
+    if (!TTS || !talking || !multimodal) { if (done) done(); return; }
     try {
       window.speechSynthesis.cancel();
       // the state line is already stripped; strip stray punctuation runs so it
       // does not read symbols aloud
       var u = new SpeechSynthesisUtterance(String(text).replace(/[*_`#>]/g, ''));
       u.rate = 1.02;
+      var fired = false;
+      function finish() {
+        if (fired) return;
+        fired = true;
+        speaking = false;
+        if (done) done();
+      }
+      u.onend = finish;
+      u.onerror = finish;
+      speaking = true;
+      paintTalk('speaking');
       window.speechSynthesis.speak(u);
-    } catch (e) {}
+      // Some browsers drop onend on a long utterance and the loop would hang
+      // waiting for a turn that never comes, so the length of the text sets a
+      // backstop: roughly fifteen characters a second, plus a margin.
+      setTimeout(finish, 4000 + String(text).length * 70);
+    } catch (e) {
+      speaking = false;
+      if (done) done();
+    }
+  }
+
+  function hush() {
+    clearTimeout(hushTimer);
+    hushTimer = null;
+    if (convoRec) {
+      try { convoRec.onend = null; convoRec.abort(); } catch (e) {}
+      convoRec = null;
+    }
+  }
+
+  function listenTurn() {
+    if (!talking || speaking || pending || !SR) return;
+    hush();
+    var rec2 = new SR();
+    convoRec = rec2;
+    rec2.continuous = true;
+    rec2.interimResults = true;
+    rec2.lang = document.documentElement.lang || 'en-US';
+    var heard = '';
+    paintTalk('listening');
+    rec2.onresult = function (ev) {
+      var interim = '';
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        if (ev.results[i].isFinal) heard += ev.results[i][0].transcript;
+        else interim += ev.results[i][0].transcript;
+      }
+      input.value = (heard + interim).replace(/^\s+/, '');
+      autogrow();
+      // every scrap of speech restarts the clock, so the send only happens
+      // once they have actually stopped
+      clearTimeout(hushTimer);
+      if (input.value.trim()) {
+        hushTimer = setTimeout(function () {
+          if (!talking || !input.value.trim()) return;
+          hush();
+          paintTalk('thinking');
+          form.dispatchEvent(new Event('submit', { cancelable: true }));
+        }, HUSH_MS);
+      }
+    };
+    rec2.onend = function () {
+      // Chrome ends recognition on its own after a lull. In a conversation that
+      // is not the end of anything, so it starts again unless the bot has the
+      // floor or a send is in flight.
+      if (talking && !speaking && !pending) listenTurn();
+    };
+    rec2.onerror = function (e) {
+      var fatal = e && (e.error === 'not-allowed' || e.error === 'service-not-allowed');
+      if (fatal) {
+        stopTalking();
+        addBot('I cannot hear you without microphone access. Turn it on for this site and press talk again, or just type.');
+      }
+      // 'no-speech' and 'aborted' are ordinary in a conversation: onend
+      // restarts the listener
+    };
+    try { rec2.start(); } catch (e) {}
+  }
+
+  // The bot can stop speaking BEFORE the request that produced it has finished
+  // settling - and always does when speech fails outright, since then the
+  // callback fires synchronously. listenTurn refuses to start while a request
+  // is in flight, quite rightly, so calling it straight from the speech
+  // callback dropped the microphone and killed the conversation after one turn.
+  // This waits for the turn to actually be over, whichever order that happens
+  // in, and gives up rather than polling forever if a request hangs.
+  function resumeListening(tries) {
+    if (!talking) return;
+    if ((pending || speaking) && (tries || 0) < 80) {
+      setTimeout(function () { resumeListening((tries || 0) + 1); }, 150);
+      return;
+    }
+    if (!pending && !speaking) listenTurn();
+  }
+
+  function startTalking() {
+    if (talking) return;
+    talking = true;
+    paintTalk('listening');
+    listenTurn();
+  }
+  function stopTalking() {
+    talking = false;
+    speaking = false;
+    hush();
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    paintTalk('talk');
+    input.focus();
+  }
+
+  if (SR && TTS && multimodal) {
+    talkBtn = document.createElement('button');
+    talkBtn.type = 'button';
+    talkBtn.className = 'bc-head-btn bc-talk';
+    paintTalk('talk');
+    talkBtn.addEventListener('click', function () {
+      if (talking) stopTalking();
+      else startTalking();
+    });
   }
 
   // ---------- the answer clock ----------
@@ -986,6 +1113,7 @@
   // collapse: the bot is out of service, so the chat shrinks to the resting
   // message, typing goes away entirely, and the guide opens below.
   function collapse(message) {
+    if (typeof stopTalking === 'function') stopTalking();
     setStatus(false);
     msgs.innerHTML = ''; // the resting line replaces the whole transcript
     addFallback(message);
@@ -1009,7 +1137,7 @@
   function goLive() {
     setStatus(true);
     if (clockEl) headTools.appendChild(clockEl);
-    if (voiceBtn) headTools.appendChild(voiceBtn);
+    if (talkBtn) headTools.appendChild(talkBtn);
     var progBtn = document.createElement('button');
     progBtn.type = 'button';
     progBtn.className = 'bc-head-btn';
@@ -1231,8 +1359,12 @@
           applyState(got.state);
           addBot(got.clean);
           history.push({ role: 'assistant', content: got.clean });
-          speak(got.clean);
           if (multimodal) clockGo();   // their turn: the clock starts again
+          // closing the loop: the mic comes back only once the bot has stopped
+          // talking, or it would transcribe the interviewer's own question
+          speak(got.clean, function () {
+            resumeListening(0);
+          });
         } else if (r.status === 429) {
           collapse(LIMIT_MSG);
         } else if (r.data && r.data.error === 'too_long') {
