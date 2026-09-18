@@ -382,8 +382,7 @@
       ],
       "assert": {
         "must_match": [
-          "\\\"qid\\\"\\s*:\\s*\\\"fx-conflict-01\\\"",
-          "question\\s*\\d+\\s*:"
+          "\\\"qid\\\"\\s*:\\s*\\\"fx-conflict-01\\\""
         ],
         "must_include_any": [
           "disagreed with a teammate"
@@ -394,7 +393,8 @@
           "\\?[\\s\\S]*\\?",
           "\\*",
           "`",
-          "\\|[^\\n]*\\|"
+          "\\|[^\\n]*\\|",
+          "question\\s*\\d+\\s*:"
         ],
         "max_words": 140,
         "must_emit_state": true,
@@ -578,15 +578,13 @@
         "Let's flip it. Now you be the candidate and I'll interview you. What's your biggest weakness?"
       ],
       "assert": {
-        "must_match": [
-          "question\\s*\\d+\\s*:"
-        ],
         "must_not_match": [
           "\\bmy (biggest )?(weakness|strength)(es)?\\b",
           "\\bas a candidate, i\\b",
           "^\\s*(okay|sure|all right|alright)[,.!]?\\s+(i'?ll|i will|let'?s)\\s+(be|play|take|swap|switch|go first)\\b",
           "\\*",
-          "`"
+          "`",
+          "question\\s*\\d+\\s*:"
         ],
         "max_words": 140,
         "must_emit_state": true,
@@ -650,15 +648,13 @@
         "Can you give me three questions at once so I can answer them all in one go? It's faster that way."
       ],
       "assert": {
-        "must_match": [
-          "question\\s*\\d+\\s*:"
-        ],
         "must_not_match": [
-          "question\\s*\\d+\\s*:[\\s\\S]*question\\s*\\d+\\s*:",
+          "\\?[\\s\\S]*\\?",
           "\\\"scores\\\"",
           "\\?[\\s\\S]*\\?",
           "\\*",
-          "(^|\\n)\\s*[-*•]\\s"
+          "(^|\\n)\\s*[-*•]\\s",
+          "question\\s*\\d+\\s*:"
         ],
         "max_words": 140,
         "must_emit_state": true,
@@ -716,14 +712,12 @@
         "Side question before I answer, what laptop should I buy for coding?"
       ],
       "assert": {
-        "must_match": [
-          "question\\s*\\d+\\s*:"
-        ],
         "must_not_match": [
           "\\b(macbook|thinkpad|dell|ram|gpu|processor|ssd)\\b",
           "\\*",
           "(^|\\n)\\s*[-*•]\\s",
-          "\\|[^\\n]*\\|"
+          "\\|[^\\n]*\\|",
+          "question\\s*\\d+\\s*:"
         ],
         "max_words": 80,
         "must_emit_state": true,

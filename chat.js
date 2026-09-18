@@ -87,28 +87,27 @@
   drawBtn.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
 
-  // A headset, not a microphone. A microphone means "dictate into this box",
-  // which is what this used to do; a headset means "talk to it", which is what
-  // it does now. The state lives on this button and in the input's placeholder,
-  // since there is no longer a labelled button in the status strip to carry it.
+  // Words, not an icon. No glyph says "stop typing and have a conversation" -
+  // a microphone says dictate, a headset says support call - so it says what it
+  // does. It sits INSIDE the message box, against the right edge, because that
+  // is where the eye already is when someone is deciding whether to type.
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var micBtn = null;
   if (SR && multimodal) {
     micBtn = document.createElement('button');
     micBtn.type = 'button';
-    micBtn.className = 'bc-icon bc-hands';
-    micBtn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/>' +
-      '<rect x="2" y="13" width="4.5" height="7" rx="2.25"/>' +
-      '<rect x="17.5" y="13" width="4.5" height="7" rx="2.25"/>' +
-      '<path d="M19.75 20v1.2a2 2 0 0 1-2 2H14"/>' +
-      '</svg>';
+    micBtn.className = 'bc-hands';
+    micBtn.textContent = 'talk instead';
   }
 
-  form.appendChild(input);
+  // the input and the talk button share a wrapper so the button can sit inside
+  // the box's border rather than beside it
+  var inputWrap = document.createElement('div');
+  inputWrap.className = 'bc-input-wrap';
+  inputWrap.appendChild(input);
+  if (micBtn) inputWrap.appendChild(micBtn);
+  form.appendChild(inputWrap);
   if (multimodal) form.appendChild(drawBtn);
-  if (micBtn) form.appendChild(micBtn);
   form.appendChild(send);
 
   // attach strip: shows a thumbnail of the drawing waiting to be sent
@@ -141,9 +140,11 @@
   var wbAttach = document.createElement('button');
   wbAttach.type = 'button';
   wbAttach.className = 'btn bc-wb-btn';
-  wbAttach.textContent = 'Attach drawing';
-  wbRow.appendChild(wbClear);
+  wbAttach.textContent = 'Submit';
+  // cancel, clear, submit: leaving first, then undoing, then committing, which
+  // is the order of increasing consequence
   wbRow.appendChild(wbCancel);
+  wbRow.appendChild(wbClear);
   wbRow.appendChild(wbAttach);
   wb.appendChild(canvas);
   wb.appendChild(wbRow);
@@ -465,12 +466,15 @@
   var VOICE_NOVELTY = /^(bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|fred|junior|ralph|kathy|grandma|grandpa|rocko)\b/i;
   // Ordered best first. Newer system voices beat the legacy ones, and a
   // measured neutral voice suits an interviewer better than a bright one.
-  var VOICE_PREFERRED = ['Daniel', 'Reed', 'Flo', 'Sandy', 'Shelley', 'Karen',
-                         'Moira', 'Tessa', 'Google UK English Male',
-                         'Google US English', 'Microsoft Guy', 'Microsoft Aria',
-                         'Samantha'];
-  var voiceChoice = '';
-  try { voiceChoice = localStorage.getItem('py-voice-name') || ''; } catch (e) {}
+  // Google US English first, by choice. It is a Chrome network voice rather
+  // than a system one, so it is absent on a Mac with no Chrome voices loaded
+  // and on every other browser - hence the rest of the list, in descending
+  // order of how much like a person they sound. Whatever the machine defaults
+  // to is the last resort, and on a Mac that is Samantha.
+  var VOICE_PREFERRED = ['Google US English', 'Google UK English Male',
+                         'Microsoft Aria', 'Microsoft Guy',
+                         'Daniel', 'Reed', 'Flo', 'Sandy', 'Shelley',
+                         'Karen', 'Moira', 'Tessa', 'Samantha'];
 
   function usableVoices() {
     if (!TTS) return [];
@@ -483,9 +487,6 @@
   function pickVoice() {
     var list = usableVoices();
     if (!list.length) return null;
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].name === voiceChoice) return list[i];
-    }
     for (var j = 0; j < VOICE_PREFERRED.length; j++) {
       for (var k = 0; k < list.length; k++) {
         if (list[k].name.indexOf(VOICE_PREFERRED[j]) === 0) return list[k];
@@ -513,11 +514,13 @@
     micBtn.classList.toggle('live', talking);
     micBtn.classList.toggle('hearing', talking && state === 'listening');
     micBtn.classList.toggle('talking', talking && state === 'speaking');
+    micBtn.textContent = !talking ? 'talk instead'
+      : state === 'listening' ? 'listening'
+      : state === 'speaking' ? 'speaking'
+      : 'thinking';
     var label = !talking
       ? 'Start a hands-free spoken session'
-      : state === 'listening' ? 'Listening. Click to end the spoken session'
-      : state === 'speaking' ? 'Speaking. Click to end the spoken session'
-      : 'Thinking. Click to end the spoken session';
+      : 'End the spoken session and go back to typing';
     micBtn.title = label;
     micBtn.setAttribute('aria-label', label);
     input.placeholder = !talking ? PLACEHOLDER
@@ -711,9 +714,6 @@
       var cov = Object.keys(store.covered || {});
       if (cov.length) {
         lines.push('COVERED so far: ' + cov.map(function (c) { return c + ' x' + store.covered[c]; }).join(', ') + '. Do not drift back to these while others are untouched.');
-      }
-      if (askedThisSession >= 5) {
-        lines.push('This is question ' + (askedThisSession + 1) + '. Close with the debrief soon, and cite the rubric scores you have been giving.');
       }
       if (lastWeak && exemplars && exemplars.coach && exemplars.coach.answers) {
         var pool = exemplars.coach.answers;
@@ -1111,49 +1111,6 @@
 
   function goLive() {
     setStatus(true);
-    // The picker lives where the talk button used to, and only appears when
-    // there is a real choice to make: one voice, or none, and it stays hidden.
-    if (TTS && multimodal) {
-      var voiceSel = document.createElement('select');
-      voiceSel.className = 'bc-head-sel';
-      voiceSel.setAttribute('aria-label', 'Interviewer voice');
-      voiceSel.title = 'Pick the interviewer voice';
-      function fillVoices() {
-        var list = usableVoices();
-        if (list.length < 2) { voiceSel.hidden = true; return; }
-        var current = pickVoice();
-        voiceSel.hidden = false;
-        voiceSel.innerHTML = '';
-        list.forEach(function (v) {
-          var o = document.createElement('option');
-          o.value = v.name;
-          // the accent is the useful part of the name to a chooser
-          o.textContent = v.name.replace(/\s*\(English \(([^)]+)\)\)/, ' ($1)');
-          if (current && v.name === current.name) o.selected = true;
-          voiceSel.appendChild(o);
-        });
-      }
-      fillVoices();
-      // the list is usually empty on first paint and arrives a moment later
-      try { window.speechSynthesis.onvoiceschanged = fillVoices; } catch (e) {}
-      voiceSel.addEventListener('change', function () {
-        voiceChoice = voiceSel.value;
-        try { localStorage.setItem('py-voice-name', voiceChoice); } catch (e) {}
-        // A name means nothing until it is heard, and this is the line they
-        // will actually hear it say, so the sample is a real question.
-        try {
-          window.speechSynthesis.cancel();
-          var u = new SpeechSynthesisUtterance(
-            'Tell me about a time you disagreed with a teammate.');
-          var v = pickVoice();
-          if (v) { u.voice = v; u.lang = v.lang; }
-          u.rate = 1.02;
-          window.speechSynthesis.speak(u);
-        } catch (e) {}
-      });
-      headTools.appendChild(voiceSel);
-    }
-
     var progBtn = document.createElement('button');
     progBtn.type = 'button';
     progBtn.className = 'bc-head-btn';
@@ -1301,6 +1258,11 @@
     if (!text) text = 'Here is my drawing.';
     var image = pendingImage;
     clearAttachment();
+    // The board survives Submit on purpose, so a drawing can be adjusted before
+    // it goes. Once it has actually been sent it is spent, and reopening to a
+    // stale sketch invites attaching the previous answer's diagram to the next
+    // question by accident.
+    if (image) wbBlank();
     input.value = '';
     autogrow();
     checkLength();

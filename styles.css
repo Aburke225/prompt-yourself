@@ -395,33 +395,6 @@ section.part { margin-bottom: 2.75rem; }
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .bc-head-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface-2, transparent); }
-/* The voice picker sits in the same strip and has to look like it belongs
-   there rather than like a form control dropped into a status bar. Native
-   select chrome is suppressed; the caret is the only affordance kept. */
-.bc-head-sel {
-  appearance: none;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  letter-spacing: 0.06em;
-  padding: 0.16rem 1.1rem 0.16rem 0.45rem;
-  border-radius: 5px;
-  cursor: pointer;
-  max-width: 8.5rem;
-  text-overflow: ellipsis;
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-                    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 0.55rem) 55%, calc(100% - 0.35rem) 55%;
-  background-size: 0.2rem 0.2rem, 0.2rem 0.2rem;
-  background-repeat: no-repeat;
-}
-.bc-head-sel:hover { color: var(--text); border-color: var(--accent); }
-/* the options themselves render in the OS menu, which ignores most of this,
-   so give them a readable ground in dark mode rather than nothing */
-.bc-head-sel option { color: var(--text); background: var(--surface); }
-@media (max-width: 520px) { .bc-head-sel { max-width: 5.5rem; } }
-.bc-head-btn[aria-pressed="false"] { opacity: 0.6; }
 /* the progress read-out is a transcript line, but it is data rather than
    speech, so it gets the mono face and keeps its own line breaks */
 .bc-report {
@@ -588,6 +561,57 @@ section.part { margin-bottom: 2.75rem; }
   padding: 0.75rem;
   border-top: 1px solid var(--border);
 }
+/* The input and the talk button share a box: the wrapper carries the border
+   and the textarea inside it goes borderless, so the button can sit against
+   the right edge INSIDE the frame rather than beside it. */
+.bc-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  transition: border-color 0.15s;
+}
+.bc-input-wrap:focus-within { border-color: var(--accent); }
+/* room for the button so long text never slides under it */
+.bc-input-wrap .bc-input {
+  border: none;
+  border-radius: 10px;
+  padding-right: 7.2rem;
+  background: transparent;
+}
+.bc-input-wrap .bc-input:focus { border-color: transparent; box-shadow: none; }
+/* Grey outline, accent lettering: reads as a secondary action inside a field
+   rather than a third primary button competing with draw and send. */
+.bc-hands {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.38rem;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, opacity 0.15s;
+}
+.bc-hands:hover { border-color: var(--accent); }
+.bc-hands.live { border-color: var(--accent); }
+.bc-hands.hearing { animation: bc-pulse 1.4s ease-in-out infinite; }
+.bc-hands.talking { opacity: 0.6; }
+@media (max-width: 520px) {
+  /* on a phone the label would crowd the box, so it keeps only the verb */
+  .bc-hands { font-size: 0.66rem; padding: 0.18rem 0.4rem; }
+  .bc-input-wrap .bc-input { padding-right: 6rem; }
+}
+
 .bc-input {
   flex: 1;
   resize: none;
