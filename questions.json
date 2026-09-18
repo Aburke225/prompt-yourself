@@ -1,0 +1,1146 @@
+{
+  "version": 1,
+  "note": "Behavioral interview question bank for the Prompt Yourself coach bot. The coach page fetches it from the same origin when the page loads, then picks questions by least covered competency and rising difficulty, so the coach stops inventing and recycling the same few questions. All question text is original writing for this site.",
+  "sources": [
+    {
+      "name": "Tech Interview Handbook",
+      "url": "https://github.com/yangshun/tech-interview-handbook",
+      "license": "MIT (repository LICENSE file; the README states the code is provided under an open source license and no separate content license is declared)",
+      "used_for": "Consulted only for the shape of a behavioral question set and which competencies interviewers commonly probe. No question text, follow-up, or phrasing was copied from it. Every string in this file was written for Prompt Yourself."
+    }
+  ],
+  "competencies": [
+    "conflict",
+    "leadership",
+    "failure",
+    "ambiguity",
+    "teamwork",
+    "growth",
+    "motivation",
+    "prioritization",
+    "communication",
+    "ownership"
+  ],
+  "questions": [
+    {
+      "id": "q-conflict-01",
+      "competency": "conflict",
+      "text": "Tell me about a time you disagreed with a coworker about how to do something. How did you handle it?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did the other person think was happening?",
+        "What would you do differently now?"
+      ],
+      "looks_for": "States the disagreement plainly, represents the other side fairly, and names a concrete step taken to resolve it."
+    },
+    {
+      "id": "q-conflict-02",
+      "competency": "conflict",
+      "text": "Describe someone you worked with who was hard to work with. What did you actually do about it?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you try before that, and why didn't it work?",
+        "How would that person describe working with you?"
+      ],
+      "looks_for": "Action rather than complaint, and some sense that the other person had reasons of their own."
+    },
+    {
+      "id": "q-conflict-03",
+      "competency": "conflict",
+      "text": "Tell me about a time you disagreed with your manager's decision. What did you say, and what happened after?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did you raise it privately or in front of others, and why that choice?",
+        "How did you behave once the decision stood?"
+      ],
+      "looks_for": "Willingness to disagree directly, paired with the judgment to pick the right setting and to commit afterwards."
+    },
+    {
+      "id": "q-conflict-04",
+      "competency": "conflict",
+      "text": "Describe a conflict you handled badly. Walk me through what you said and where it went wrong.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What was the first moment you could have turned it around?",
+        "Did you ever repair it with that person?"
+      ],
+      "looks_for": "Real self-criticism with specific words and moments, not a softened story that still makes the candidate the hero."
+    },
+    {
+      "id": "q-conflict-05",
+      "competency": "conflict",
+      "text": "Tell me about a time two people you worked with were in conflict and it was slowing the work down. What was your role in it?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Whose account did you believe at first, and were you right?",
+        "What did you do that neither of them asked you to do?"
+      ],
+      "looks_for": "Steps into a problem that wasn't theirs, stays neutral enough to be useful, and ties the effort back to the work."
+    },
+    {
+      "id": "q-conflict-06",
+      "competency": "conflict",
+      "text": "Describe a time you disagreed with a colleague about a patient's care. How did you raise it, and what happened?",
+      "difficulty": 2,
+      "roles": [
+        "healthcare"
+      ],
+      "followups": [
+        "Did you escalate it, and how did you decide?",
+        "What did the other clinician think was going on?"
+      ],
+      "looks_for": "Puts patient safety ahead of comfort, follows a clear escalation path, and stays professional with the colleague."
+    },
+    {
+      "id": "q-conflict-07",
+      "competency": "conflict",
+      "text": "Tell me about a time you lost the argument and then had to carry out a decision you thought was wrong. How did you handle the months that followed?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you say to your team about it?",
+        "Looking back, was the decision wrong or were you?"
+      ],
+      "looks_for": "Can disagree and still execute in good faith, without quietly undermining the decision or rewriting history."
+    },
+    {
+      "id": "q-conflict-08",
+      "competency": "conflict",
+      "text": "Describe the hardest conversation you've had to start with someone at work. Why was it hard, and how did you open it?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How long did you wait before starting it, and what did the delay cost?",
+        "What did you plan to say that you ended up not saying?"
+      ],
+      "looks_for": "Faces the discomfort rather than avoiding it, and can quote the actual opening line and the reasoning behind it."
+    },
+    {
+      "id": "q-leadership-01",
+      "competency": "leadership",
+      "text": "Tell me about a time you took the lead on something without being asked.",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did the people around you react to you stepping in?",
+        "What would have happened if you hadn't?"
+      ],
+      "looks_for": "A real gap the candidate noticed and filled, described with their own actions rather than the group's."
+    },
+    {
+      "id": "q-leadership-02",
+      "competency": "leadership",
+      "text": "Describe a time you helped someone new learn the job. What did you do first?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did they struggle with that you didn't expect?",
+        "How did you know when to stop helping?"
+      ],
+      "looks_for": "Adjusts to the other person's starting point instead of reciting what worked for themselves."
+    },
+    {
+      "id": "q-leadership-03",
+      "competency": "leadership",
+      "text": "Tell me about a time a group you were in had stalled because nobody wanted to make the call. What did you do?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What made you the one to move, rather than waiting?",
+        "Who disagreed with the call, and how did you handle that?"
+      ],
+      "looks_for": "Takes a decision with incomplete agreement, and owns it afterwards rather than spreading the responsibility."
+    },
+    {
+      "id": "q-leadership-04",
+      "competency": "leadership",
+      "text": "Describe a time you had to get people on board who didn't report to you and had no reason to help. How did you do it?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What was in it for them?",
+        "Who said no, and what did you do then?"
+      ],
+      "looks_for": "Influence built on the other side's interests and evidence, not on pressure or a borrowed title."
+    },
+    {
+      "id": "q-leadership-05",
+      "competency": "leadership",
+      "text": "Tell me about a time you had to give someone hard feedback. What did you say?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did they take it in the moment?",
+        "Did their behavior change, and how did you check?"
+      ],
+      "looks_for": "Specific, direct feedback delivered close to the event, with a follow-through the candidate can point to."
+    },
+    {
+      "id": "q-leadership-06",
+      "competency": "leadership",
+      "text": "Tell me about a change you led across your grade team or department. How did you bring colleagues along?",
+      "difficulty": 2,
+      "roles": [
+        "teaching"
+      ],
+      "followups": [
+        "Who resisted, and what was their reason?",
+        "What evidence did you use to show it was working?"
+      ],
+      "looks_for": "Leads peers without authority, respects their expertise, and can show an effect on students or on workload."
+    },
+    {
+      "id": "q-leadership-07",
+      "competency": "leadership",
+      "text": "Tell me about a time you had to lead a team through a decision you didn't agree with, and they knew you didn't. How did you handle your own doubts in front of them?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Where's the line between being honest with your team and undermining the decision?",
+        "What did you say when someone asked you directly what you thought?"
+      ],
+      "looks_for": "Holds honesty and loyalty together, and has a considered position on where that line sits."
+    },
+    {
+      "id": "q-leadership-08",
+      "competency": "leadership",
+      "text": "Describe a time your leadership made a situation worse. What did you get wrong about it?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who paid for that, and did you ever say so to them?",
+        "What do you now watch for that you didn't watch for then?"
+      ],
+      "looks_for": "Names a real misjudgment and the specific habit that came out of it, without sliding into false modesty."
+    },
+    {
+      "id": "q-failure-01",
+      "competency": "failure",
+      "text": "Tell me about a mistake you made recently. What happened?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who else was affected by it?",
+        "What would you do differently if it came up tomorrow?"
+      ],
+      "looks_for": "Picks a real mistake with actual consequences, and gets to the correction quickly rather than defending the setup."
+    },
+    {
+      "id": "q-failure-02",
+      "competency": "failure",
+      "text": "Describe a time something you were responsible for didn't go to plan. What did you do next?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How soon did you tell anyone?",
+        "What did you fix first, and why that?"
+      ],
+      "looks_for": "Moves to recovery and disclosure fast, and can order the recovery steps sensibly."
+    },
+    {
+      "id": "q-failure-03",
+      "competency": "failure",
+      "text": "Tell me about a project that failed. What was your part in why it failed?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Take the other people out of the story. What's left that's yours?",
+        "What was the earliest sign you could have acted on?"
+      ],
+      "looks_for": "Can separate their own contribution from bad luck and other people's choices, and does it without prompting."
+    },
+    {
+      "id": "q-failure-04",
+      "competency": "failure",
+      "text": "Describe a time you missed a deadline that mattered. How did you tell the people it affected?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "When did you first know you'd miss it?",
+        "What did you offer them besides an apology?"
+      ],
+      "looks_for": "Early warning rather than a late confession, and a concrete plan offered alongside the bad news."
+    },
+    {
+      "id": "q-failure-05",
+      "competency": "failure",
+      "text": "Tell me about a time you had to tell someone senior that you'd made a mistake.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What were you afraid would happen?",
+        "How did you open the conversation?"
+      ],
+      "looks_for": "Reports up on their own initiative, leads with the impact, and doesn't bury the problem in context."
+    },
+    {
+      "id": "q-failure-06",
+      "competency": "failure",
+      "text": "Tell me about a change you shipped that broke something. How did you find out, and what did you change about your own process afterwards?",
+      "difficulty": 2,
+      "roles": [
+        "swe"
+      ],
+      "followups": [
+        "Did a person tell you or did a system tell you?",
+        "What test or check would have caught it, and did you add it?"
+      ],
+      "looks_for": "Treats the breakage as a process gap, not bad luck, and can name the specific guard they added."
+    },
+    {
+      "id": "q-failure-07",
+      "competency": "failure",
+      "text": "Tell me about the most expensive mistake you've made, in money, time, or trust. What did it cost, and who else paid for it?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did you ever tell the people who paid for it?",
+        "What made you capable of that mistake at the time?"
+      ],
+      "looks_for": "Picks something genuinely costly, states the size of it, and accounts for the effect on other people."
+    },
+    {
+      "id": "q-failure-08",
+      "competency": "failure",
+      "text": "Describe a time you made the same kind of mistake twice. Why didn't the first one stick?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you change after the first one, and why wasn't it enough?",
+        "How do you know it won't be three times?"
+      ],
+      "looks_for": "Honest about a repeat pattern and can explain the difference between a lesson learned and a habit changed."
+    },
+    {
+      "id": "q-ambiguity-01",
+      "competency": "ambiguity",
+      "text": "Tell me about a time you were handed a task with no clear instructions. Where did you start?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you assume, and did you check the assumption?",
+        "Who did you ask, and what did you ask them?"
+      ],
+      "looks_for": "Starts moving without waiting to be told, but checks the important assumptions with someone."
+    },
+    {
+      "id": "q-ambiguity-02",
+      "competency": "ambiguity",
+      "text": "Describe a time you had to decide without enough information. What did you decide, and why that?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What information would have changed your mind?",
+        "What did you do to limit the damage if you were wrong?"
+      ],
+      "looks_for": "Explains the reasoning under uncertainty and shows some plan for being wrong."
+    },
+    {
+      "id": "q-ambiguity-03",
+      "competency": "ambiguity",
+      "text": "Tell me about a time the goal changed after you'd already started. How did you adjust?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you throw away, and how did you feel about that?",
+        "Did you push back on the change, or accept it?"
+      ],
+      "looks_for": "Adapts without resentment, and can distinguish a change worth absorbing from one worth questioning."
+    },
+    {
+      "id": "q-ambiguity-04",
+      "competency": "ambiguity",
+      "text": "Describe a problem nobody around you had solved before. How did you work out what a good result would even look like?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Where did you look for something comparable?",
+        "How did you get other people to agree that was the target?"
+      ],
+      "looks_for": "Defines the target before chasing it, and finds reference points outside their immediate team."
+    },
+    {
+      "id": "q-ambiguity-05",
+      "competency": "ambiguity",
+      "text": "Tell me about a time a customer or client asked for something vague. How did you make it specific?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did they actually want, underneath what they asked for?",
+        "What did you show them to confirm you'd understood?"
+      ],
+      "looks_for": "Digs for the underlying need and confirms understanding with something concrete rather than another question."
+    },
+    {
+      "id": "q-ambiguity-06",
+      "competency": "ambiguity",
+      "text": "Describe a time you had to define success for a product or feature while the goal was still unsettled. What did you choose to measure?",
+      "difficulty": 2,
+      "roles": [
+        "pm"
+      ],
+      "followups": [
+        "What did that measure miss?",
+        "Who disagreed with the metric, and how did you resolve it?"
+      ],
+      "looks_for": "Picks a measure tied to user or business value, and knows its blind spots."
+    },
+    {
+      "id": "q-ambiguity-07",
+      "competency": "ambiguity",
+      "text": "Tell me about a decision you made under real uncertainty that turned out wrong. Was the decision wrong, or only the outcome?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you know at the time that you're leaving out of the story now?",
+        "Would you make the same call again with the same information?"
+      ],
+      "looks_for": "Separates process quality from result, and does it honestly rather than as a way to avoid blame."
+    },
+    {
+      "id": "q-ambiguity-08",
+      "competency": "ambiguity",
+      "text": "Describe a time you had to act before anyone agreed on what the problem was. How did you justify moving?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who did you not tell, and why?",
+        "What was your stop condition if it went badly?"
+      ],
+      "looks_for": "Moves with a stated rationale and a limit on the downside, not on confidence alone."
+    },
+    {
+      "id": "q-teamwork-01",
+      "competency": "teamwork",
+      "text": "Tell me about the best team you've been part of. What made it work?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you personally contribute to that?",
+        "What would have broken it?"
+      ],
+      "looks_for": "Names specific behaviors rather than good feelings, and places themselves inside the cause."
+    },
+    {
+      "id": "q-teamwork-02",
+      "competency": "teamwork",
+      "text": "Describe a time you had to depend on someone who wasn't delivering. What did you do?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did you talk to them before you talked to anyone else?",
+        "What was actually going on for them?"
+      ],
+      "looks_for": "Goes to the person first, finds out the cause, and protects the work without going around them by default."
+    },
+    {
+      "id": "q-teamwork-03",
+      "competency": "teamwork",
+      "text": "Tell me about a time you changed your mind because of something a teammate said.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What had you been sure of?",
+        "Did you tell them they'd changed your mind?"
+      ],
+      "looks_for": "A real reversal on something they were invested in, with credit given where it's due."
+    },
+    {
+      "id": "q-teamwork-04",
+      "competency": "teamwork",
+      "text": "Describe working closely with someone whose way of working was the opposite of yours. How did you make it work?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you change about yourself, not about them?",
+        "Where did it still cause friction, and how did you handle that?"
+      ],
+      "looks_for": "Adjusts their own behavior first and can name the friction without turning the other person into a problem."
+    },
+    {
+      "id": "q-teamwork-05",
+      "competency": "teamwork",
+      "text": "Tell me about a busy shift when the team was short-staffed. What did you take on, and what did you decide to let go?",
+      "difficulty": 2,
+      "roles": [
+        "retail"
+      ],
+      "followups": [
+        "Who did you tell about what you were dropping?",
+        "What did the customers notice?"
+      ],
+      "looks_for": "Makes deliberate tradeoffs under pressure, communicates them, and keeps the customer in view."
+    },
+    {
+      "id": "q-teamwork-06",
+      "competency": "teamwork",
+      "text": "Tell me about a time you gave the credit to someone else, or gave up your own claim to it, to get something done.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did anyone ever find out it was yours?",
+        "Would you do it again in the same situation?"
+      ],
+      "looks_for": "A real cost accepted for a shared result, told without bitterness or asking for sympathy."
+    },
+    {
+      "id": "q-teamwork-07",
+      "competency": "teamwork",
+      "text": "Describe a time your team delivered something you weren't proud of. Where did you go along with the group against your own judgment?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What stopped you from saying it out loud?",
+        "What would you say now, and to whom?"
+      ],
+      "looks_for": "Admits to going quiet, understands why, and has a specific plan for speaking up next time."
+    },
+    {
+      "id": "q-teamwork-08",
+      "competency": "teamwork",
+      "text": "Tell me about a time you were the reason a team struggled. How did you find that out?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did someone have to tell you, or did you see it?",
+        "What did you say to the team afterwards?"
+      ],
+      "looks_for": "Takes the hard read on themselves, and can describe the repair rather than only the realization."
+    },
+    {
+      "id": "q-growth-01",
+      "competency": "growth",
+      "text": "Tell me about a piece of feedback that changed how you work.",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What exactly do you do differently now?",
+        "How did you react when you first heard it?"
+      ],
+      "looks_for": "A concrete behavior change, not just an attitude shift, and honesty about the first reaction."
+    },
+    {
+      "id": "q-growth-02",
+      "competency": "growth",
+      "text": "Describe something you've taught yourself in the last year. Why that?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did you know you were making progress?",
+        "What did you drop to make room for it?"
+      ],
+      "looks_for": "Self-directed learning with a reason behind the choice and some way of measuring progress."
+    },
+    {
+      "id": "q-growth-03",
+      "competency": "growth",
+      "text": "Tell me about feedback you disagreed with. What did you do with it?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What was the part of it that was true?",
+        "Did you tell the person you disagreed?"
+      ],
+      "looks_for": "Can hold a disagreement and still extract the true part, rather than accepting everything or rejecting it all."
+    },
+    {
+      "id": "q-growth-04",
+      "competency": "growth",
+      "text": "Describe a skill you were weak at and deliberately worked on. How do you know it improved?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who told you it had improved, besides you?",
+        "What's still not fixed about it?"
+      ],
+      "looks_for": "Outside evidence of improvement, and an honest read on what remains."
+    },
+    {
+      "id": "q-growth-05",
+      "competency": "growth",
+      "text": "Tell me about a time you were criticized in front of other people. How did you react in the moment?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you do in the hour after?",
+        "Was the criticism fair?"
+      ],
+      "looks_for": "Composure under public pressure, and a considered response rather than a defensive one."
+    },
+    {
+      "id": "q-growth-06",
+      "competency": "growth",
+      "text": "Tell me about feedback you got on a class project, a placement, or an internship. What did you actually change?",
+      "difficulty": 2,
+      "roles": [
+        "newgrad"
+      ],
+      "followups": [
+        "Did you get a chance to try again, and how did it go?",
+        "What feedback do you expect to get in your first job?"
+      ],
+      "looks_for": "Treats early feedback seriously and can point to a specific change rather than an intention."
+    },
+    {
+      "id": "q-growth-07",
+      "competency": "growth",
+      "text": "Tell me about a pattern in your feedback that keeps coming up across jobs. Why hasn't it gone away?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What have you tried, and where does it break down?",
+        "Is it something you're choosing to live with?"
+      ],
+      "looks_for": "Genuine self-knowledge about a persistent weakness, including honesty about the limits of their own effort."
+    },
+    {
+      "id": "q-growth-08",
+      "competency": "growth",
+      "text": "Describe the last time you were wrong about your own strengths. What corrected you?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How long did you hold the wrong picture?",
+        "What do you check now before claiming you're good at something?"
+      ],
+      "looks_for": "Willing to describe a real overestimate, and has changed how they calibrate since."
+    },
+    {
+      "id": "q-motivation-01",
+      "competency": "motivation",
+      "text": "Why do you want this role?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What would you miss about your current work?",
+        "What's the part of this job you expect to dislike?"
+      ],
+      "looks_for": "Reasons tied to this specific role and organization, and honesty about the tradeoffs."
+    },
+    {
+      "id": "q-motivation-02",
+      "competency": "motivation",
+      "text": "Tell me about a part of your work you'd keep doing even if nobody asked you to.",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "When did you last do it on your own time?",
+        "How does that show up in the work you've done?"
+      ],
+      "looks_for": "A real interest backed by evidence of unprompted effort, not a rehearsed passion statement."
+    },
+    {
+      "id": "q-motivation-03",
+      "competency": "motivation",
+      "text": "Walk me through why you're leaving your current role, or why you left the last one.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you try to change before deciding to leave?",
+        "What would have kept you there?"
+      ],
+      "looks_for": "A clear reason without running down former colleagues, and evidence they tried to fix it first."
+    },
+    {
+      "id": "q-motivation-04",
+      "competency": "motivation",
+      "text": "Describe a stretch when you lost motivation at work. How did you get it back?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How long did it last, and did the quality of your work drop?",
+        "What did you tell your manager?"
+      ],
+      "looks_for": "Recognizes the dip, keeps the commitments anyway, and can name what actually helped."
+    },
+    {
+      "id": "q-motivation-05",
+      "competency": "motivation",
+      "text": "Tell me about a time you turned down work or an opportunity. What was the reasoning?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did saying no cost you?",
+        "Did you regret it?"
+      ],
+      "looks_for": "A considered no with stated priorities behind it, and willingness to own the cost."
+    },
+    {
+      "id": "q-motivation-06",
+      "competency": "motivation",
+      "text": "Tell me why you chose nursing, and what you expect the first year on a unit to actually feel like.",
+      "difficulty": 2,
+      "roles": [
+        "healthcare"
+      ],
+      "followups": [
+        "What part of it do you think will be hardest for you?",
+        "Where did that expectation come from?"
+      ],
+      "looks_for": "A realistic picture of the work, grounded in clinical exposure rather than an idea of the profession."
+    },
+    {
+      "id": "q-motivation-07",
+      "competency": "motivation",
+      "text": "What would make you leave this job a year in? Be specific.",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Would you tell us before you started looking?",
+        "Which of those things have you already seen signs of here?"
+      ],
+      "looks_for": "Names real conditions instead of deflecting, which also shows they've thought about fit honestly."
+    },
+    {
+      "id": "q-motivation-08",
+      "competency": "motivation",
+      "text": "Tell me about a time your interests moved away from what you were trained for. How did you decide whether to follow that or stay?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you give up to make that choice?",
+        "What tells you this is a direction and not just restlessness?"
+      ],
+      "looks_for": "A reasoned decision about direction, with the cost acknowledged and some test applied to their own motives."
+    },
+    {
+      "id": "q-prioritization-01",
+      "competency": "prioritization",
+      "text": "Tell me how you decide what to do first when several things are due at once.",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Give me a recent example where that method failed.",
+        "Who do you check with before reordering things?"
+      ],
+      "looks_for": "A method they actually use, illustrated with a real case rather than described in the abstract."
+    },
+    {
+      "id": "q-prioritization-02",
+      "competency": "prioritization",
+      "text": "Describe a time you had more work than hours. What did you drop, and who did you tell?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did you choose what to drop?",
+        "What happened to the thing you dropped?"
+      ],
+      "looks_for": "Makes the cut deliberately and tells the affected people instead of quietly letting things fail."
+    },
+    {
+      "id": "q-prioritization-03",
+      "competency": "prioritization",
+      "text": "Tell me about a time two people both needed you urgently. How did you choose?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you say to the one who waited?",
+        "Did you pick right?"
+      ],
+      "looks_for": "Chooses on impact rather than on who pushed hardest, and manages the person who waits."
+    },
+    {
+      "id": "q-prioritization-04",
+      "competency": "prioritization",
+      "text": "Describe a time you had to say no to someone senior. How did you word it?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you offer instead of a flat no?",
+        "How did they respond?"
+      ],
+      "looks_for": "Declines clearly while offering an alternative, and can quote the actual wording."
+    },
+    {
+      "id": "q-prioritization-05",
+      "competency": "prioritization",
+      "text": "Tell me about a close or a reporting deadline where something went wrong late in the process. How did you decide what to fix first?",
+      "difficulty": 2,
+      "roles": [
+        "finance"
+      ],
+      "followups": [
+        "What did you flag to your reviewer, and when?",
+        "What control would have caught it earlier?"
+      ],
+      "looks_for": "Prioritizes by materiality and reporting risk, and escalates within the deadline rather than after it."
+    },
+    {
+      "id": "q-prioritization-06",
+      "competency": "prioritization",
+      "text": "Tell me about a time you chose speed over quality on purpose. What did you accept as the cost?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who agreed to that tradeoff with you?",
+        "Did you ever go back and fix it?"
+      ],
+      "looks_for": "A conscious tradeoff with the cost named up front and someone else bought in, not a shortcut described after the fact."
+    },
+    {
+      "id": "q-prioritization-07",
+      "competency": "prioritization",
+      "text": "Describe the worst week you've had at work. Walk me through how you spent the hours, not how you felt.",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What would you have cut on day one, knowing how it ended?",
+        "Who could have helped that you didn't ask?"
+      ],
+      "looks_for": "Can account for their own choices hour by hour, and sees where they failed to ask for help."
+    },
+    {
+      "id": "q-prioritization-08",
+      "competency": "prioritization",
+      "text": "Tell me about a time your priorities were wrong and it only showed up later. What signal did you ignore?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who tried to tell you?",
+        "What do you check for now because of it?"
+      ],
+      "looks_for": "Traces the miss back to a signal they had and dismissed, and names the habit that came out of it."
+    },
+    {
+      "id": "q-communication-01",
+      "competency": "communication",
+      "text": "Tell me about a time you had to explain something complicated to someone outside your field.",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did you know they'd understood?",
+        "What did you leave out on purpose?"
+      ],
+      "looks_for": "Adjusts to the listener, checks understanding, and decides deliberately what to leave out."
+    },
+    {
+      "id": "q-communication-02",
+      "competency": "communication",
+      "text": "Describe a time you were misunderstood at work. How did you find out, and how did you fix it?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What in your wording caused it?",
+        "How long did the wrong version run before you caught it?"
+      ],
+      "looks_for": "Looks at their own wording as the cause rather than blaming the listener."
+    },
+    {
+      "id": "q-communication-03",
+      "competency": "communication",
+      "text": "Tell me about a time you had to give someone bad news. What did you say first?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did you lead with the news or with the context, and why?",
+        "What did they need from you that you hadn't prepared for?"
+      ],
+      "looks_for": "Leads with the substance, stays present for the reaction, and doesn't hide behind process language."
+    },
+    {
+      "id": "q-communication-04",
+      "competency": "communication",
+      "text": "Describe something you wrote that changed someone's mind.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What was the strongest argument against you, and did you include it?",
+        "How did you know it had landed?"
+      ],
+      "looks_for": "Built the case around the reader's objections, and can point to the decision that followed."
+    },
+    {
+      "id": "q-communication-05",
+      "competency": "communication",
+      "text": "Tell me about a time you had to explain a technical tradeoff to a stakeholder who wanted both options.",
+      "difficulty": 2,
+      "roles": [
+        "swe"
+      ],
+      "followups": [
+        "How did you make the cost of each option concrete to them?",
+        "What did they decide, and did you agree?"
+      ],
+      "looks_for": "Translates engineering cost into terms the stakeholder owns, and makes a recommendation rather than only presenting choices."
+    },
+    {
+      "id": "q-communication-06",
+      "competency": "communication",
+      "text": "Describe a hard conversation with a parent or guardian. How did you open it, and where did it end up?",
+      "difficulty": 2,
+      "roles": [
+        "teaching"
+      ],
+      "followups": [
+        "What did they think was happening?",
+        "What did you commit to, and did you follow through?"
+      ],
+      "looks_for": "Opens with the student's interest, hears the family's version, and leaves with a specific shared commitment."
+    },
+    {
+      "id": "q-communication-07",
+      "competency": "communication",
+      "text": "Tell me about a time your communication caused real damage. What did people take from it that you didn't intend?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did you correct the record?",
+        "What do you now do before sending something like that?"
+      ],
+      "looks_for": "Owns the effect rather than the intent, and describes a concrete correction and a changed habit."
+    },
+    {
+      "id": "q-communication-08",
+      "competency": "communication",
+      "text": "Describe a time you had to speak up to a group that had already decided. What did you say, and what did it cost you?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who backed you, and did you line that up beforehand?",
+        "Would you spend that credit the same way again?"
+      ],
+      "looks_for": "Chooses the moment deliberately, states the objection cleanly, and accepts the social cost without drama."
+    },
+    {
+      "id": "q-ownership-01",
+      "competency": "ownership",
+      "text": "Tell me about something you fixed that wasn't your job.",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Did you tell whoever owned it?",
+        "How much time did it take, and where did that time come from?"
+      ],
+      "looks_for": "Takes on the unowned problem while respecting the person whose area it was."
+    },
+    {
+      "id": "q-ownership-02",
+      "competency": "ownership",
+      "text": "Describe a time you noticed a problem before anyone else did. What did you do with it?",
+      "difficulty": 1,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who did you raise it with, and how did you get them to take it seriously?",
+        "What happened if nobody acted?"
+      ],
+      "looks_for": "Doesn't stop at noticing, and can describe how they got someone else to care."
+    },
+    {
+      "id": "q-ownership-03",
+      "competency": "ownership",
+      "text": "Tell me about a time you took over something that was in bad shape. How did you decide what to fix first?",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What did you deliberately leave broken?",
+        "How did you talk about the previous owner's work?"
+      ],
+      "looks_for": "Puts the worst problems first, leaves some things alone on purpose, and is fair about whoever came before."
+    },
+    {
+      "id": "q-ownership-04",
+      "competency": "ownership",
+      "text": "Describe a commitment you kept when nobody would have noticed if you hadn't.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "What made it tempting to skip?",
+        "What did keeping it cost you?"
+      ],
+      "looks_for": "Holds a standard without an audience, and can name what it cost rather than making a show of it."
+    },
+    {
+      "id": "q-ownership-05",
+      "competency": "ownership",
+      "text": "Tell me about a time you argued against a shortcut that would have made your own work easier.",
+      "difficulty": 2,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Who wanted the shortcut, and what was their case?",
+        "Did you win, and what happened after?"
+      ],
+      "looks_for": "Puts the result ahead of their own convenience and can state the other side's argument fairly."
+    },
+    {
+      "id": "q-ownership-06",
+      "competency": "ownership",
+      "text": "Describe a time a customer had been treated badly and putting it right was going to cost the store something. What did you do?",
+      "difficulty": 2,
+      "roles": [
+        "retail"
+      ],
+      "followups": [
+        "What was your limit, and who set it?",
+        "What did you change so it wouldn't happen again?"
+      ],
+      "looks_for": "Resolves it within their authority, escalates when past it, and follows up on the cause."
+    },
+    {
+      "id": "q-ownership-07",
+      "competency": "ownership",
+      "text": "Tell me about something that went wrong in your area that you could fairly have blamed on someone else. How did you describe it to your manager?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "How did you handle the other person's part of it?",
+        "Did the truth ever come out differently than you told it?"
+      ],
+      "looks_for": "Takes responsibility for the area without overstating their own share and without quietly pushing it onto the other person."
+    },
+    {
+      "id": "q-ownership-08",
+      "competency": "ownership",
+      "text": "Describe a problem you saw and chose not to take on. Why not, and what happened?",
+      "difficulty": 3,
+      "roles": [
+        "any"
+      ],
+      "followups": [
+        "Was that the right call?",
+        "What would have made you take it on?"
+      ],
+      "looks_for": "Can defend a decision not to act, which shows judgment about capacity rather than a habit of grabbing everything."
+    }
+  ]
+}

@@ -31,6 +31,9 @@
   var headLabel = document.createElement('span');
   head.appendChild(dot);
   head.appendChild(headLabel);
+  var headTools = document.createElement('span');
+  headTools.className = 'bc-head-tools';
+  head.appendChild(headTools);
 
   var msgs = document.createElement('div');
   msgs.className = 'bc-msgs';
@@ -119,6 +122,513 @@
 
   var history = []; // {role, content, image?} — greeting included for context
   var pendingImage = null;
+
+  // ---------- session memory ----------
+  // Everything below lives in THIS visitor's browser and is sent only as part
+  // of their own next message. Nothing is stored on any server: the Worker is
+  // stateless by design and there is no account, so localStorage is the only
+  // place a profile can live without breaking that promise. Every read and
+  // write is guarded because a private window throws on access rather than
+  // returning empty.
+  var STORE_KEY = 'py-' + bot + '-v1';
+  function freshStore() {
+    return bot === 'coach'
+      ? { sessions: 0, asked: [], covered: {}, scores: [], best: null }
+      : { sessions: 0, topics: {}, open: [], settled: [] };
+  }
+  function loadStore() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return freshStore();
+      var v = JSON.parse(raw);
+      var base = freshStore();
+      for (var k in base) if (!(k in v)) v[k] = base[k];
+      return v;
+    } catch (e) {
+      return freshStore();
+    }
+  }
+  function saveStore() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {}
+  }
+  var store = loadStore();
+  var priorSessions = store.sessions || 0;
+  store.sessions = priorSessions + 1;
+  saveStore();
+
+  // ---------- the state line the bots emit ----------
+  // Each reply ends with <<PY {...}>>, which is how the model reports what it
+  // just did: the topic, whether a check passed, the rubric scores. The client
+  // strips it before anything is displayed or stored, so the visitor never sees
+  // it. A missing or malformed line is normal and simply means no update —
+  // never a broken reply, because free-tier models will not comply every time.
+  var STATE_RE = /<<\s*PY\s*(\{[\s\S]*?\})\s*>>/;
+  function takeState(text) {
+    var m = STATE_RE.exec(text);
+    if (!m) return { clean: text.trim(), state: null };
+    var state = null;
+    try { state = JSON.parse(m[1]); } catch (e) { state = null; }
+    // strip every marker, not just the parsed one, in case it emitted two
+    var clean = text.replace(/<<\s*PY\s*\{[\s\S]*?\}\s*>>/g, '').trim();
+    return { clean: clean, state: state };
+  }
+
+  // ---------- grounding: Wikipedia, open CORS, no key, no account ----------
+  // The free-tier models behind this are small, and a tutor that states a wrong
+  // fact confidently is worse than no tutor. So the topic is looked up and the
+  // summary is handed to the model to teach FROM. Fetched fresh per topic and
+  // cached for the session; a slow or failed lookup is skipped rather than
+  // waited on, because a late answer is worse than an ungrounded one.
+  var WIKI_TIMEOUT_MS = 1800;
+  var groundCache = {};
+  var groundNow = null; // {title, extract, url} for the topic in play
+  var reportedTopic = ''; // what the model says the subject is, from its state line
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var t = setTimeout(function () { if (!done) { done = true; resolve(null); } }, ms);
+      promise.then(function (v) {
+        if (!done) { done = true; clearTimeout(t); resolve(v); }
+      }, function () {
+        if (!done) { done = true; clearTimeout(t); resolve(null); }
+      });
+    });
+  }
+  // Pull a searchable topic out of a conversational message. This is the whole
+  // difficulty of grounding a chat: "I want to learn how photosynthesis works,
+  // complete beginner" is not a search query. Measured against real openers,
+  // handing that sentence straight to Wikipedia returns nothing from the title
+  // search and outright garbage from the full-text one - "teach me about the
+  // krebs cycle please" came back as Dan Rather. Stripping the instruction
+  // wrapper first turns the same twelve openers into the right article.
+  function topicOf(msg) {
+    var t = String(msg || '').toLowerCase();
+    // their own punctuation marks where the topic ends and the level and goal
+    // begin; a comma followed by a pronoun is that same boundary in prose
+    t = t.split(/[\u2014\u2013;\n]|(?:\s[-]\s)|,\s*(?=i\b|i'm|im\b|we\b|my\b|never\b|trying\b)/)[0];
+    t = t
+      .replace(/\b(i(?:'| a)?m|i|we)?\s*(want|would like|wanna|need|hope|try(?:ing)?)\s+to\s+(learn|understand|know|study|get)\b/g, ' ')
+      .replace(/\b(teach|explain|help|show|tell|walk)\s+(me|us)?\s*(about|through)?\b/g, ' ')
+      .replace(/\b(how|what|why|when|where)\s+(do|does|did|is|are|was|were|can|could)?\b/g, ' ')
+      .replace(/\b(can|could|would)\s+you\b/g, ' ')
+      .replace(/\bi\s+(know|have|never)\b[^,.]*/g, ' ')
+      .replace(/\b(complete|total|absolute)?\s*(beginner|novice|newbie|expert|intermediate|advanced)s?\b/g, ' ')
+      .replace(/\b(basics|fundamentals|introduction|intro|crash course|overview|from scratch|for dummies|level)\b/g, ' ')
+      .replace(/\b(please|thanks|thank you|pls)\b/g, ' ')
+      .replace(/\b(work|works|working|mean|means)\b/g, ' ')
+      .replace(/[?!.,:"']/g, ' ');
+    var STOP = ('a an the and or of to in on for with about is are was were do does did my your our i we ' +
+      'you it that this these those as at by from so but if then than very really just want need learn ' +
+      'understand know study get me us please help explain teach tell show how what why when where which ' +
+      'who be been being have has had will would can could should may might not no yes ok okay job ' +
+      // continuations, which are the visitor saying "keep going", not a subject.
+      // Without these, "go on" extracted to "go" and grounded the lesson on
+      // Wikipedia's disambiguation page for the board game.
+      'go going on next more continue sure yeah yep yes right thanks done ready start begin again ' +
+      'another keep tell told said ask asked one two three first second last ' +
+      'now today currently actually also still lets let us maybe perhaps really quite').split(' ');
+    var words = t.split(/\s+/).filter(function (w) {
+      return w && w.length > 1 && STOP.indexOf(w) < 0;
+    });
+    var out = words.slice(0, 5).join(' ').trim();
+    // a single short scrap is noise, not a subject: searching it lands on a
+    // disambiguation page and grounds the lesson on the wrong thing entirely
+    if (out.length < 4) return '';
+    return out;
+  }
+  function wikiJson(url) {
+    // Wikipedia answers a throttled client with prose, not JSON, so parsing has
+    // to be allowed to fail and simply mean "no grounding this turn"
+    return fetch(url).then(function (r) {
+      if (!r.ok) return null;
+      return r.json().catch(function () { return null; });
+    });
+  }
+  function wikiLookup(query) {
+    var q = topicOf(query);
+    if (!q) return Promise.resolve(null);
+    if (groundCache[q] !== undefined) return Promise.resolve(groundCache[q]);
+    var base = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&namespace=0';
+    return withTimeout(
+      // the title search is precise and answers most openers; full text is the
+      // fallback for a phrase with no article of its own ("offside rule soccer")
+      wikiJson(base + '&action=opensearch&limit=1&search=' + encodeURIComponent(q))
+        .then(function (d) {
+          var title = d && d[1] && d[1][0];
+          if (title) return title;
+          return wikiJson(base + '&action=query&list=search&srlimit=1&srsearch=' + encodeURIComponent(q))
+            .then(function (d2) {
+              var hits = d2 && d2.query && d2.query.search;
+              return (hits && hits[0] && hits[0].title) || null;
+            });
+        })
+        .then(function (title) {
+          if (!title) return null;
+          return wikiJson(
+            'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title)
+          );
+        })
+        .then(function (d) {
+          if (!d || !d.extract) return null;
+          // "Go" and "Python" are disambiguation pages: a list of unrelated
+          // meanings is worse than no reference at all, so it is refused here
+          // regardless of how the query got there
+          if (d.type && d.type !== 'standard') return null;
+          return {
+            title: d.title,
+            // 700 chars is the useful part of a lead section and leaves room
+            // for the profile inside the Worker's 4000-char message cap
+            extract: String(d.extract).slice(0, 700),
+            url: (d.content_urls && d.content_urls.desktop && d.content_urls.desktop.page) || '',
+          };
+        }),
+      WIKI_TIMEOUT_MS
+    ).then(function (v) {
+      groundCache[q] = v;
+      return v;
+    });
+  }
+
+  // ---------- the question bank and the exemplar library ----------
+  // Same mechanism the Worker already uses for prompts.json: static JSON on
+  // Pages, fetched at request time. Same origin, so no CORS and no key. If
+  // either fetch fails the bot keeps working with less: the coach invents its
+  // own questions as before, and no exemplar is attached.
+  var bank = null;
+  var exemplars = null;
+  function loadJson(name) {
+    return withTimeout(
+      fetch(name).then(function (r) { return r.ok ? r.json() : null; }),
+      2500
+    ).catch(function () { return null; });
+  }
+  if (bot === 'coach') loadJson('questions.json?v=1').then(function (d) { bank = d; });
+  loadJson('exemplars.json?v=1').then(function (d) { exemplars = d; });
+
+  // ---------- question selection, with coverage ----------
+  // The point of a bank is not variety for its own sake: it is COVERAGE. Left
+  // to itself the model recycles the same few questions and a session can end
+  // without ever touching failure or ambiguity. Selection walks the least
+  // covered competency first, never repeats a question this visitor has
+  // already been asked, and steps difficulty up as the session goes on.
+  var roleHint = '';
+  function pickQuestion() {
+    if (!bank || !bank.questions || !bank.questions.length) return null;
+    var asked = store.asked || [];
+    var covered = store.covered || {};
+    var pool = bank.questions.filter(function (q) {
+      if (asked.indexOf(q.id) >= 0) return false;
+      if (!q.roles || q.roles.indexOf('any') >= 0) return true;
+      return roleHint ? q.roles.indexOf(roleHint) >= 0 : true;
+    });
+    if (!pool.length) return null;
+    // warm up, then standard, then pressure - by how many have been asked
+    var want = askedThisSession < 1 ? 1 : askedThisSession < 4 ? 2 : 3;
+    var byDiff = pool.filter(function (q) { return q.difficulty === want; });
+    if (byDiff.length) pool = byDiff;
+    var least = null;
+    pool.forEach(function (q) {
+      var n = covered[q.competency] || 0;
+      if (least === null || n < least) least = n;
+    });
+    var final = pool.filter(function (q) {
+      return (covered[q.competency] || 0) === least;
+    });
+    return final[Math.floor(Math.random() * final.length)] || pool[0];
+  }
+  var askedThisSession = 0;
+  var currentQ = null;
+
+  // ---------- voice out ----------
+  // The coach already listens; this makes it speak. A spoken question answered
+  // out loud under a clock is the actual skill being practised, and typing at a
+  // silent interviewer trains something else. Tutor stays silent: reading an
+  // explanation at your own pace beats having it read to you.
+  var TTS = 'speechSynthesis' in window;
+  var voiceOn = false;
+  var voiceBtn = null;
+  if (TTS && multimodal) {
+    try { voiceOn = localStorage.getItem('py-voice') !== 'off'; } catch (e) { voiceOn = true; }
+    voiceBtn = document.createElement('button');
+    voiceBtn.type = 'button';
+    voiceBtn.className = 'bc-head-btn';
+    function paintVoice() {
+      voiceBtn.textContent = voiceOn ? 'voice on' : 'voice off';
+      voiceBtn.setAttribute('aria-pressed', voiceOn ? 'true' : 'false');
+      voiceBtn.title = voiceOn ? 'Stop reading questions aloud' : 'Read questions aloud';
+    }
+    paintVoice();
+    voiceBtn.addEventListener('click', function () {
+      voiceOn = !voiceOn;
+      try { localStorage.setItem('py-voice', voiceOn ? 'on' : 'off'); } catch (e) {}
+      if (!voiceOn) try { window.speechSynthesis.cancel(); } catch (e) {}
+      paintVoice();
+    });
+  }
+  function speak(text) {
+    if (!TTS || !voiceOn || !multimodal) return;
+    try {
+      window.speechSynthesis.cancel();
+      // the state line is already stripped; strip stray punctuation runs so it
+      // does not read symbols aloud
+      var u = new SpeechSynthesisUtterance(String(text).replace(/[*_`#>]/g, ''));
+      u.rate = 1.02;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // ---------- the answer clock ----------
+  // Starts when the interviewer finishes asking and stops when the answer is
+  // sent, so the elapsed time can be handed to the coach as evidence. It is
+  // reported, not enforced: a hard cut-off would punish a good long answer,
+  // while the number lets the coach say "that ran four minutes" and mean it.
+  var clockEl = null;
+  var clockStart = 0;
+  var clockTimer = null;
+  var lastAnswerSecs = 0;
+  if (multimodal) {
+    clockEl = document.createElement('span');
+    clockEl.className = 'bc-clock';
+    clockEl.hidden = true;
+  }
+  function fmtSecs(n) {
+    var m = Math.floor(n / 60);
+    var s2 = n % 60;
+    return m ? m + ':' + (s2 < 10 ? '0' : '') + s2 : n + 's';
+  }
+  function clockGo() {
+    if (!clockEl) return;
+    clockStart = Date.now();
+    clockEl.hidden = false;
+    clockEl.classList.remove('over');
+    function tick() {
+      var secs = Math.round((Date.now() - clockStart) / 1000);
+      clockEl.textContent = fmtSecs(secs);
+      // 120s is the shape of a good behavioural answer, not a rule
+      if (secs > 120) clockEl.classList.add('over');
+    }
+    tick();
+    clearInterval(clockTimer);
+    clockTimer = setInterval(tick, 1000);
+  }
+  function clockStop() {
+    if (!clockEl || !clockStart) return 0;
+    clearInterval(clockTimer);
+    clockTimer = null;
+    lastAnswerSecs = Math.round((Date.now() - clockStart) / 1000);
+    clockStart = 0;
+    clockEl.hidden = true;
+    return lastAnswerSecs;
+  }
+
+  // ---------- the context block ----------
+  // This is the whole grounding mechanism in one function: everything the model
+  // needs that it cannot know on its own, assembled fresh and attached to the
+  // visitor's LATEST message.
+  //
+  // Why the latest and not a leading system-ish turn: the Worker caps a
+  // conversation at 20,000 characters and trims from the FRONT to get under it
+  // (worker.js), so a context turn at the head is the first thing thrown away -
+  // exactly at the end of a long session, which is when the debrief needs the
+  // scores most. Riding on the last message it can never be trimmed.
+  //
+  // It is also kept OUT of `history`, so only one message ever carries it
+  // instead of every past turn dragging its own stale copy through the cap.
+  var CTX_CAP = 1600;
+  function contextBlock() {
+    var lines = [];
+    if (bot === 'tutor') {
+      if (groundNow) {
+        lines.push('REFERENCE on "' + groundNow.title + '" (Wikipedia, teach from this and prefer it over memory):');
+        lines.push(groundNow.extract);
+      }
+      var names = Object.keys(store.topics || {});
+      if (priorSessions > 0 && names.length) {
+        var seen = names.slice(-4).map(function (t) {
+          var r = store.topics[t];
+          return t + ' (' + (r.pass || 0) + ' checks passed, ' + (r.fail || 0) + ' missed)';
+        });
+        lines.push('LEARNER PROFILE, from ' + priorSessions + ' earlier session(s): ' + seen.join('; '));
+      }
+      if ((store.open || []).length) {
+        lines.push('STILL UNRESOLVED from before, revisit before new material: ' + store.open.slice(-3).join('; '));
+      }
+      if ((store.settled || []).length) {
+        lines.push('ALREADY UNDERSTOOD, do not re-teach: ' + store.settled.slice(-5).join('; '));
+      }
+      if (lastCheckFailed && exemplars && exemplars.tutor && exemplars.tutor.moves) {
+        // a failed check is the one moment a worked example of remediation
+        // earns its tokens, so it is attached then and not before
+        var mv = exemplars.tutor.moves.filter(function (m) {
+          return /fail|wrong|misconception|scaffold/i.test(m.trigger || '');
+        })[0] || exemplars.tutor.moves[0];
+        if (mv) lines.push('EXAMPLE of handling a failed check - student: "' + mv.student + '" tutor: "' + mv.tutor + '"');
+      }
+    } else {
+      if (currentQ) {
+        lines.push('ASK THIS QUESTION NEXT, close to word for word: "' + currentQ.text + '"');
+        var looks = currentQ.looks_for || 'a clear situation, their own actions, a real result';
+        lines.push('It tests ' + currentQ.competency + '. A strong answer shows: ' +
+          looks.replace(/\.\s*$/, '') + '.');
+        if ((currentQ.followups || []).length) {
+          lines.push('If the answer is strong, press with: "' + currentQ.followups[0] + '"');
+        }
+        lines.push('Report this question id in your state line: ' + currentQ.id);
+      }
+      var cov = Object.keys(store.covered || {});
+      if (cov.length) {
+        lines.push('COVERED so far: ' + cov.map(function (c) { return c + ' x' + store.covered[c]; }).join(', ') + '. Do not drift back to these while others are untouched.');
+      }
+      if (lastAnswerSecs) {
+        lines.push('They took ' + lastAnswerSecs + ' seconds to answer aloud. Mention pacing only if it is notably long (over two minutes) or clipped (under twenty seconds).');
+      }
+      if (askedThisSession >= 5) {
+        lines.push('This is question ' + (askedThisSession + 1) + '. Close with the debrief soon, and cite the rubric scores you have been giving.');
+      }
+      if (lastWeak && exemplars && exemplars.coach && exemplars.coach.answers) {
+        var pool = exemplars.coach.answers;
+        // prefer the same competency; any strong answer still shows the shape
+        var ex = pool.filter(function (a) {
+          return currentQ && a.competency === currentQ.competency;
+        })[0] || pool[Math.floor(Math.random() * pool.length)];
+        if (ex) lines.push('EXAMPLE of the same story told well: "' + ex.strong + '"');
+      }
+    }
+    if (!lines.length) return '';
+    var out = 'SESSION CONTEXT, from the site and not from them - use it, never quote it back or mention it:\n' + lines.join('\n');
+    return out.length > CTX_CAP ? out.slice(0, CTX_CAP) : out;
+  }
+  var lastCheckFailed = false;
+  var lastWeak = false;
+
+  // ---------- learning from the state line ----------
+  // Defensive throughout: this is a free-tier model's self-report, so every
+  // field is treated as absent until it proves otherwise. A wrong or missing
+  // field costs an update, never a broken session.
+  function applyState(st) {
+    if (!st || typeof st !== 'object') return;
+    if (bot === 'tutor') {
+      var topic = typeof st.topic === 'string' ? st.topic.slice(0, 60).trim() : '';
+      if (topic) {
+        store.topics = store.topics || {};
+        store.topics[topic] = store.topics[topic] || { pass: 0, fail: 0 };
+      }
+      if (topic) reportedTopic = topic;
+      var check = st.check === 'pass' || st.check === 'fail' ? st.check : 'none';
+      lastCheckFailed = check === 'fail';
+      if (topic && check === 'pass') store.topics[topic].pass++;
+      if (topic && check === 'fail') store.topics[topic].fail++;
+      var mis = typeof st.misconception === 'string' ? st.misconception.slice(0, 120).trim() : '';
+      store.open = store.open || [];
+      store.settled = store.settled || [];
+      if (mis && check === 'fail' && store.open.indexOf(mis) < 0) {
+        store.open.push(mis);
+        if (store.open.length > 8) store.open.shift();
+      }
+      if (check === 'pass' && store.open.length) {
+        // a passed check settles the thing it was checking
+        var settled = mis && store.open.indexOf(mis) >= 0 ? mis : store.open[store.open.length - 1];
+        store.open = store.open.filter(function (x) { return x !== settled; });
+        if (store.settled.indexOf(settled) < 0) store.settled.push(settled);
+        if (store.settled.length > 12) store.settled.shift();
+      }
+      saveStore();
+      return;
+    }
+    // coach
+    var qid = typeof st.qid === 'string' ? st.qid : '';
+    store.asked = store.asked || [];
+    store.covered = store.covered || {};
+    store.scores = store.scores || [];
+    if (qid && store.asked.indexOf(qid) < 0) {
+      store.asked.push(qid);
+      askedThisSession++;
+      var comp = (currentQ && currentQ.id === qid && currentQ.competency) ||
+        (typeof st.competency === 'string' ? st.competency : '');
+      if (comp) store.covered[comp] = (store.covered[comp] || 0) + 1;
+    }
+    var sc = st.scores;
+    if (sc && typeof sc === 'object') {
+      var dims = ['star', 'specific', 'impact', 'ownership', 'concision'];
+      var clean = {};
+      var total = 0;
+      var any = false;
+      dims.forEach(function (d) {
+        var v = Number(sc[d]);
+        if (isFinite(v)) {
+          clean[d] = Math.max(0, Math.min(2, Math.round(v)));
+          total += clean[d];
+          any = true;
+        }
+      });
+      if (any) {
+        store.scores.push({
+          session: store.sessions,
+          qid: qid || null,
+          competency: (currentQ && currentQ.competency) || null,
+          scores: clean,
+          seconds: lastAnswerSecs || null,
+        });
+        if (store.scores.length > 200) store.scores.shift();
+        // a weak answer is what earns an exemplar on the next turn
+        lastWeak = total <= 5;
+        if (store.best === null || total > store.best) store.best = total;
+      }
+    }
+    // hand the next question forward so it is in context before it is needed
+    if (qid) {
+      var next = pickQuestion();
+      if (next) currentQ = next;
+    }
+    saveStore();
+  }
+
+  // ---------- progress across sessions ----------
+  // The reason to keep any of this is that the visitor can see it. A score with
+  // no trend is a number; a score next to last session's is a reason to come
+  // back. Rendered into the transcript on demand, never sent anywhere.
+  function progressText() {
+    if (bot === 'coach') {
+      var sc = store.scores || [];
+      if (!sc.length) return 'No scored answers yet. Answer a question and I will score it.';
+      var dims = ['star', 'specific', 'impact', 'ownership', 'concision'];
+      var mean = function (arr, d) {
+        var v = arr.map(function (x) { return (x.scores && x.scores[d]) || 0; });
+        return v.length ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : 0;
+      };
+      var thisS = sc.filter(function (x) { return x.session === store.sessions; });
+      var prev = sc.filter(function (x) { return x.session === store.sessions - 1; });
+      var out = ['Answers scored this session: ' + thisS.length + '. All time: ' + sc.length + '.'];
+      dims.forEach(function (d) {
+        var a = mean(thisS, d);
+        var line = '  ' + d + ': ' + a.toFixed(1) + ' of 2';
+        if (prev.length) {
+          var b = mean(prev, d);
+          var delta = a - b;
+          line += '  (last session ' + b.toFixed(1) + ', ' +
+            (delta > 0.05 ? 'up' : delta < -0.05 ? 'down' : 'flat') + ')';
+        }
+        out.push(line);
+      });
+      var cov = Object.keys(store.covered || {});
+      if (cov.length) out.push('Competencies practised: ' + cov.join(', ') + '.');
+      var miss = (bank && bank.competencies ? bank.competencies : []).filter(function (c) {
+        return !(store.covered || {})[c];
+      });
+      if (miss.length) out.push('Not yet touched: ' + miss.join(', ') + '.');
+      return out.join('\n');
+    }
+    var names = Object.keys(store.topics || {});
+    if (!names.length) return 'Nothing tracked yet. Name a topic and I will start keeping score.';
+    var out2 = ['Sessions: ' + store.sessions + '.'];
+    names.forEach(function (t) {
+      var r = store.topics[t];
+      out2.push('  ' + t + ': ' + (r.pass || 0) + ' checks passed, ' + (r.fail || 0) + ' missed');
+    });
+    if ((store.settled || []).length) out2.push('Settled: ' + store.settled.join('; '));
+    if ((store.open || []).length) out2.push('Still open: ' + store.open.join('; '));
+    return out2.join('\n');
+  }
 
   // ---------- whiteboard behavior ----------
   var ctx = canvas.getContext('2d');
@@ -379,7 +889,29 @@
 
   function goLive() {
     setStatus(true);
+    if (clockEl) headTools.appendChild(clockEl);
+    if (voiceBtn) headTools.appendChild(voiceBtn);
+    var progBtn = document.createElement('button');
+    progBtn.type = 'button';
+    progBtn.className = 'bc-head-btn';
+    progBtn.textContent = 'progress';
+    progBtn.title = bot === 'coach'
+      ? 'Your rubric scores and how they compare with last session'
+      : 'What you have covered and what is still open';
+    progBtn.addEventListener('click', function () {
+      var d = addBot(progressText());
+      d.classList.add('bc-report');
+    });
+    headTools.appendChild(progBtn);
     var greeting = GREETINGS[bot] || GREETINGS.tutor;
+    if (bot === 'coach') {
+      currentQ = pickQuestion();   // ready before the first answer arrives
+    }
+    if (priorSessions > 0) {
+      greeting += bot === 'coach'
+        ? ' We have practised together before, so I will pick up where we left off.'
+        : ' I still have what we covered last time, so I will start from there.';
+    }
     addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
     if (multimodal) {
@@ -453,17 +985,46 @@
 
     pending = true;
     send.disabled = true;
+    clockStop();                 // they have answered; the clock is evidence now
     var typing = addTyping();
 
-    // the payload carries at most one drawing: the latest
-    var recent = history.slice(-16);
-    var payload = recent.map(function (m, i) {
-      return i === recent.length - 1 && m.image
-        ? m
-        : { role: m.role, content: m.content };
-    });
+    // Ground the topic before asking. The tutor looks the subject up so it can
+    // teach from a source rather than from whatever the free-tier model half
+    // remembers. A different top hit means the visitor changed subject, which
+    // is the only signal needed to re-ground.
+    // Extraction handles the opener; from then on the model's own reported
+    // topic is the better query, because it is already the canonical name of
+    // the subject. A message with no extractable topic ("go on", "yes") keeps
+    // whatever is already grounded instead of dropping it.
+    var query = topicOf(text) || reportedTopic;
+    var prep = bot === 'tutor' && query
+      ? wikiLookup(query).then(function (g) {
+          if (g && (!groundNow || g.title !== groundNow.title)) groundNow = g;
+        })
+      : Promise.resolve();
 
-    fetch(ENDPOINT, {
+    prep.then(function () {
+      // the payload carries at most one drawing: the latest
+      var recent = history.slice(-16);
+      var payload = recent.map(function (m, i) {
+        return i === recent.length - 1 && m.image
+          ? m
+          : { role: m.role, content: m.content };
+      });
+      // context rides on the last message so the Worker's front-trim can never
+      // drop it, and never enters `history` so it is carried exactly once
+      var ctxText = contextBlock();
+      if (ctxText && payload.length) {
+        var last = payload[payload.length - 1];
+        payload[payload.length - 1] = {
+          role: last.role,
+          content: last.content + '\n\n' + ctxText,
+          image: last.image,
+        };
+        if (!last.image) delete payload[payload.length - 1].image;
+      }
+
+      return fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ bot: bot, messages: payload }),
@@ -478,8 +1039,12 @@
             lastProvider = r.data.provider;
             setStatus(true);
           }
-          addBot(r.data.reply);
-          history.push({ role: 'assistant', content: r.data.reply });
+          var got = takeState(r.data.reply);
+          applyState(got.state);
+          addBot(got.clean);
+          history.push({ role: 'assistant', content: got.clean });
+          speak(got.clean);
+          if (multimodal) clockGo();   // their turn: the clock starts again
         } else if (r.status === 429) {
           collapse(LIMIT_MSG);
         } else if (r.data && r.data.error === 'image_unavailable') {
@@ -496,5 +1061,6 @@
         pending = false;
         send.disabled = false;
       });
+    });
   });
 })();

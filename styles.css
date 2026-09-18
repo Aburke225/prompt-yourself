@@ -337,6 +337,54 @@ section.part { margin-bottom: 2.75rem; }
 .bc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .bc-dot.resting { background: #D98E04; }
 
+/* The right-hand end of the status strip: the answer clock, the voice toggle
+   and the progress button. `margin-left: auto` pushes the whole group over
+   without the status label having to know they exist. */
+.bc-head-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+.bc-head-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  letter-spacing: 0.1em;
+  padding: 0.16rem 0.45rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.bc-head-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface-2, transparent); }
+.bc-head-btn[aria-pressed="false"] { opacity: 0.6; }
+/* tabular figures so a ticking clock does not shift the buttons beside it */
+.bc-clock {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 2.6em;
+  text-align: right;
+}
+.bc-clock.over { color: #D98E04; }
+/* the progress read-out is a transcript line, but it is data rather than
+   speech, so it gets the mono face and keeps its own line breaks */
+.bc-report {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  opacity: 0.92;
+}
+@media (max-width: 520px) {
+  /* on a phone the strip has room for the clock or the label, not both plus
+     two buttons - the label is the one that can go */
+  .bc-head-btn { letter-spacing: 0.04em; padding: 0.14rem 0.35rem; }
+  .bc-head-tools { gap: 0.32rem; }
+}
+
 .bc-msgs {
   display: flex;
   flex-direction: column;

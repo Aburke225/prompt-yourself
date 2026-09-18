@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "note": "Gold examples for injection on relevance, not for the permanent system prompt. Match the trigger line against what the visitor just said, inject one or two items, then drop them next turn. Tutor move names follow the MathDial taxonomy of teacher moves (focus, probing, telling, generic), but every exchange here is original writing rather than dataset text, and the subjects range past math because this tutor teaches any topic. The coach pairs are original throughout. Tutor and strong strings follow house style: plain text, contractions, no markdown, no em dashes, English only.",
+  "sources": [
+    {
+      "name": "MathDial",
+      "url": "https://huggingface.co/datasets/eth-nlped/mathdial",
+      "license": "CC BY 4.0",
+      "used_for": "Origin of the taxonomy of teacher moves (focus, probing, telling, generic, and their subcategories) that the tutor move names follow. No dataset rows are reproduced here."
+    },
+    {
+      "name": "MathDial paper (Macina, Daheim, Pal Chowdhury, Sinha, Kapur, Gurevych, Sachan; EMNLP Findings 2023)",
+      "url": "https://arxiv.org/abs/2305.14536",
+      "license": "CC BY 4.0 as shown on the arXiv abstract page; cited, not reproduced",
+      "used_for": "Published description of the move taxonomy and its subcategories. Cited as the source of the taxonomy only."
+    },
+    {
+      "name": "MathDial code repository",
+      "url": "https://github.com/eth-nlped/mathdial",
+      "license": "CC BY-SA 4.0 as stated in the repository, while the dataset card states CC BY 4.0",
+      "used_for": "Recorded for attribution completeness. The two pages state different Creative Commons variants, so this file attributes MathDial under both and copies no text from either, which satisfies the stricter of the two."
+    }
+  ],
+  "tutor": {
+    "moves": [
+      {
+        "id": "t-probe-01",
+        "trigger": "The learner gives a wrong answer but shows real reasoning, and the error is one step you can point at.",
+        "move": "Probing, seeking self correction",
+        "student": "So the discount comes out to 30 percent off, because 20 percent off and then another 10 percent off is 30 percent.",
+        "tutor": "Hold on before I say either way. Take a 100 dollar item. Knock 20 percent off it, what's the price now? Now take 10 percent off that new price, not the original. Tell me what you land on.",
+        "why": "They find the error themselves, so what sticks is the rule about what the second cut applies to, not just a corrected number."
+      },
+      {
+        "id": "t-diagnose-01",
+        "trigger": "The answer is wrong and two or three different misconceptions could explain it, so correcting blind would target the wrong one.",
+        "move": "Probing, asking for explanation to locate the misconception",
+        "student": "Passive voice is when a sentence uses was or were.",
+        "tutor": "Label these two for me. The window was broken by the storm. The window was dirty. Both use was. Tell me which one is passive and what made you pick it.",
+        "why": "Their reasoning tells you whether they learned a rule badly or are keying on a single word, and those two need completely different fixes."
+      },
+      {
+        "id": "t-tell-01",
+        "trigger": "The learner states a flat falsehood with confidence, or backs it with a friend, a website, or a course they took.",
+        "move": "Telling, revealing the answer",
+        "student": "My friend in IT told me incognito mode hides my browsing from my internet provider, so I'm covered.",
+        "tutor": "That's incorrect, and it matters too much to soften. Incognito only stops your own browser from saving history and cookies on that device. Your provider, your employer's network, and the sites you visit still see the traffic. A VPN changes some of what they see. Incognito doesn't. Now back to where we were.",
+        "why": "Probing a falsehood the learner is sure of reads as agreement, and this is the kind of error that can actually cost them something if it survives the lesson."
+      },
+      {
+        "id": "t-tell-02",
+        "trigger": "The learner asks you to skip the work and hand over the answer.",
+        "move": "Telling, deferred until one attempt",
+        "student": "Can you just tell me the answer? I don't have time to guess.",
+        "tutor": "Here's the deal. Give me one attempt, even a rough one, and then I'll show you a full answer you can keep. That order matters, because I can only fix the part that's actually broken if I see your version first. One line is enough: what do you think the main cause was?",
+        "why": "It names the trade instead of scolding them, and an attempt turns the reveal into feedback on their thinking rather than a fact they'll forget by tomorrow."
+      },
+      {
+        "id": "t-check-01",
+        "trigger": "You've just explained something and need to know whether it landed.",
+        "move": "Generic, general inquiry as an applied check",
+        "student": "Got it, that's clear.",
+        "tutor": "Then put it to work. Your neighbor says her bread came out dense and heavy. Using what we just covered about proofing, what's the first question you'd ask her, and what would her answer tell you?",
+        "why": "Asking whether something makes sense measures confidence, which is exactly the thing that's unreliable here. A small applied task measures the understanding itself."
+      },
+      {
+        "id": "t-scaffold-01",
+        "trigger": "A check question came back wrong or blank, which means the piece you just taught was too big.",
+        "move": "Focus, guiding student focus after a failed check",
+        "student": "I really don't know. I thought I had it a minute ago.",
+        "tutor": "That's useful information, not a problem. Let's shrink it. Forget the whole invoice. One line only: of the three numbers on it, which is the amount the customer owes before tax? Point at that and we'll build back up from there.",
+        "why": "Reteaching the same size chunk just repeats the failure. Cutting the step down finds the exact place their understanding still holds, and you restart from there."
+      },
+      {
+        "id": "t-focus-01",
+        "trigger": "The learner has stalled and is waiting for you, but already has what they need to take the next step.",
+        "move": "Focus, seek strategy",
+        "student": "Okay, I've got the two witness statements side by side. Now what?",
+        "tutor": "You tell me. You've got two accounts of the same evening that don't match. What's the first thing you'd compare between them, and what would it mean if they disagreed there?",
+        "why": "Choosing the next step is the skill being taught. Handing it over trains them to sit and wait for you, which is the opposite of the goal."
+      },
+      {
+        "id": "t-recall-01",
+        "trigger": "The learner ignores a fact or constraint they told you themselves earlier in the session.",
+        "move": "Focus, recall relevant information",
+        "student": "So I'd put the whole 8,000 into the index fund and leave it there.",
+        "tutor": "Read back what you told me at the start about the car. You said you'd need to replace it inside a year. Hold that next to a plan that ties the money up. What does that tell you about how much of the 8,000 can go in?",
+        "why": "Pointing them at their own words builds the habit of checking their constraints, which is what they'll need to do when you're not there."
+      },
+      {
+        "id": "t-perturb-01",
+        "trigger": "The learner gets it right and you need to know whether they hold the rule or just this one case.",
+        "move": "Probing, perturbing the question",
+        "student": "The nurse charts it as an allergy because the patient broke out in hives after the dose.",
+        "tutor": "Right, and hives is the detail doing the work there. Change one thing. Same patient, same drug, but this time the reaction is nausea within the hour. Does that still get charted as an allergy, and what's the distinction you're using?",
+        "why": "A correct answer on one case can be memory. Changing a single detail shows whether the rule underneath is really there before you build on it."
+      },
+      {
+        "id": "t-world-01",
+        "trigger": "The learner's error traces to a missing prerequisite rather than to the thing you're teaching.",
+        "move": "Probing, seeking world knowledge",
+        "student": "I don't get why my mortgage payment barely moves the balance in year one.",
+        "tutor": "Let's check something underneath this. In plain words, what is interest charged on? Not the formula, just what the bank is charging you for. Answer that and year one will explain itself.",
+        "why": "Teaching the topic on top of a missing prerequisite relocates the confusion instead of clearing it, and it comes back two steps later."
+      },
+      {
+        "id": "t-generic-01",
+        "trigger": "The learner says they're lost or that nothing makes sense, but gives you nothing specific to work with.",
+        "move": "Generic, general inquiry to locate the break",
+        "student": "I'm completely lost, none of this is making sense.",
+        "tutor": "Then let's find where it stopped. Start from the last part you did follow and talk me through it in your own words until you hit the part that goes fuzzy. Stop right there. That spot is what we'll work on.",
+        "why": "Explaining it again from the top usually breaks in the same place. Their walkthrough locates the actual break, and it's rarely where you'd have guessed."
+      },
+      {
+        "id": "t-partial-01",
+        "trigger": "The answer is half right, and a plain wrong would wipe out the half they got.",
+        "move": "Telling the verdict on one half, probing the other",
+        "student": "A control group matters because you need something to compare against, and you use the people who didn't sign up for the program.",
+        "tutor": "The comparison half is exactly right, and that's the whole point of the design. The second half is where it breaks. People who didn't sign up differ from people who did in ways that have nothing to do with the program. Name one of those differences and you'll see the problem it causes.",
+        "why": "Quoting the correct half tells them what to keep, so the repair is one idea rather than a fresh start on everything."
+      }
+    ]
+  },
+  "coach": {
+    "answers": [
+      {
+        "id": "c-conflict-01",
+        "competency": "conflict",
+        "question": "Tell me about a time you disagreed with a coworker.",
+        "weak": "We had a situation on my team where there was some tension about how to handle a client account. We talked it through as a group and we decided to change the approach. It got better after that. I think we all learned that communication is important, and we ended up working well together for the rest of the project.",
+        "weak_problem": "Every action is a we, so the interviewer has no idea what this candidate personally did or decided.",
+        "strong": "A coworker and I disagreed about a client who kept expanding scope. He wanted to absorb it to keep them happy. I thought we'd lose the account anyway once we missed the deadline. I asked him to walk me through his reasoning, then showed him our hours log: 40 percent over the quote with six weeks left. We agreed I'd take it to the client. I proposed a phased plan, they took phase one, and I delivered it two weeks early. He and I now price scope changes together before either of us answers a client.",
+        "why": "Same story, but the actions are his, the hours log settles the disagreement, and it ends with something that changed."
+      },
+      {
+        "id": "c-failure-01",
+        "competency": "failure",
+        "question": "Tell me about a time you failed.",
+        "weak": "I had a project that didn't go well. The timeline was unrealistic from the start, the requirements kept changing, and we lost two people partway through. I did what I could with what I had. Honestly, looking back, I don't think anyone could have delivered it under those conditions. I learned a lot about the importance of realistic planning.",
+        "weak_problem": "It's a list of external excuses with no decision of his own in it, so it never becomes a failure he could learn from.",
+        "strong": "I ran a volunteer training weekend that under delivered. I built the agenda around what I found interesting instead of asking the volunteers what they needed. Eleven of 30 finished the certification. When I read the midday feedback forms I cut my last two sessions and ran practice time instead, which saved part of it. The real mistake was mine and it was upstream: no needs survey. I sent one before the next cohort, rebuilt the agenda around the top three gaps, and 27 of 31 certified.",
+        "why": "He names his own decision as the cause, the before and after numbers are right there, and the fix is shown working."
+      },
+      {
+        "id": "c-impact-01",
+        "competency": "ownership",
+        "question": "Walk me through a project you're proud of.",
+        "weak": "I rebuilt our inventory tracking process. It was pretty manual before and people were frustrated with it. I automated a lot of the steps and made it much easier to use. Everyone was a lot happier afterward and it saved a significant amount of time. It's still being used today, which I think says something about how well it worked.",
+        "weak_problem": "Much easier, significant, a lot happier: nothing here is measurable, so the interviewer can't tell whether this was a big win or a small one.",
+        "strong": "Our stockroom counted inventory on paper and rekeyed it into the system. That took two people a full shift every Monday and counts still ran about 8 percent off. I shadowed both of them for a week, found the rekeying was where the errors entered, and moved counting to barcode scanners feeding the system directly. Monday counts now take one person two hours and variance is under 2 percent. I also wrote the one page guide the store still trains new hires on.",
+        "why": "Two people a shift down to one person two hours is a result. Much easier is a feeling."
+      },
+      {
+        "id": "c-influence-01",
+        "competency": "leadership",
+        "question": "Tell me about a time you got people to adopt something you couldn't require them to adopt.",
+        "weak": "So this is kind of a long story. There was a tool I thought we should be using, and I'd used something similar at my last job, though that team was much smaller so the situation was pretty different. Anyway, I brought it up a few times in meetings. Some people were interested, others weren't, and there was a whole thing with budget that year. Eventually it did get adopted, mostly because the new manager liked it too.",
+        "weak_problem": "It wanders, buries the outcome at the end, and the one reason it gives credits somebody else.",
+        "strong": "I wanted our four clinics on a shared referral tracker and I didn't manage any of them. I started with the clinic that had the worst backlog, offered to do their data entry myself for two weeks, and tracked what it fixed. Their lost referrals went from 19 a month to 3. I brought that one page to the other three leads and let their own numbers make the case. All four were on it within a quarter. I'd do it the same way again: prove it somewhere small, then let the result do the selling.",
+        "why": "One clear line from start to finish, a number that carries the argument, and he names the tactic so it reads as repeatable."
+      },
+      {
+        "id": "c-priority-01",
+        "competency": "prioritization",
+        "question": "Tell me about a time you had too much on your plate.",
+        "weak": "Last quarter was brutal. I had two big deliverables due the same week, my counterpart was out on leave, and I'd picked up her reporting duties on top of my own. There were days I was in meetings from nine to five and doing the actual work at night. It was honestly one of the most stressful stretches I've had in this job.",
+        "weak_problem": "It's all situation and no action. She describes the pressure vividly but never says what she decided to do about it.",
+        "strong": "Two deliverables landed in the same week while I was covering a colleague's reporting. I listed all three with who was waiting on each and what missing it would cost. The client deliverable had a contractual date. The internal deck didn't. The reporting had a legal filing behind it. So I filed the report, delivered the client work on time, and asked my manager to move the internal deck by a week, with the reasoning in two lines so she could just say yes. She did. Nothing with a real deadline slipped.",
+        "why": "Same week, but now there's a decision, the rule she used to make it, and what she gave up to hold the line."
+      },
+      {
+        "id": "c-feedback-01",
+        "competency": "growth",
+        "question": "Tell me about a piece of critical feedback you received.",
+        "weak": "My manager once told me I was too blunt in code reviews. I was surprised, because I thought I was just being direct about real problems, and honestly some of that code did have serious issues. I think a lot of it came down to different communication styles on the team. We talked about it and it hasn't really come up since then.",
+        "weak_problem": "He spends the answer explaining why the feedback was wrong, and hasn't come up since is not evidence that anything changed.",
+        "strong": "My manager told me my code review comments were stopping two junior engineers from posting drafts. My first reaction was that everything I flagged was real. It was, but that wasn't her point. I asked her for two examples. Both were correct comments with no path forward in them. So I changed one habit: every blocking comment either names the fix or asks a question. Both engineers went back to posting work in progress, and one told me months later she'd nearly stopped sharing anything.",
+        "why": "He admits the defensive reaction and then drops it, changes one specific habit, and the proof comes from someone other than him."
+      },
+      {
+        "id": "c-ambiguity-01",
+        "competency": "ambiguity",
+        "question": "Tell me about a time you had to decide without enough information.",
+        "weak": "That happens a lot in my role, honestly. Usually what I do is gather as much information as I can, consult the relevant stakeholders, and then make the best call I can with what's available. I try to stay flexible and adjust as I learn more. I'd say I'm pretty comfortable with ambiguity in general.",
+        "weak_problem": "It's a description of how she generally operates, not a time. There's no specific story in it at all.",
+        "strong": "A grant renewal was due in nine days and our program officer had gone quiet on whether the scope cap had changed. I couldn't wait and I couldn't afford to guess wrong. I wrote the budget to the old cap, added a short note flagging that assumption and naming what we'd cut if the cap had dropped, and submitted it. Then I sent the officer that same paragraph as a question. She confirmed the old cap two days after the deadline. That flagged assumption note is standard in our submissions now.",
+        "why": "One dated situation, a real decision made inside the gap, and she covered the downside instead of just staying flexible."
+      },
+      {
+        "id": "c-leadership-01",
+        "competency": "leadership",
+        "question": "Tell me about a time you led people through a change they didn't want.",
+        "weak": "When we switched to the new charting system, a lot of the nurses on my unit were unhappy about it. I tried to stay positive and remind everyone that change is hard but we'd get through it. I made myself available for questions and helped people when they got stuck. Eventually everyone got used to it, and now nobody would go back.",
+        "weak_problem": "Staying positive and being available are postures, not actions. Nothing here is something the interviewer could picture her doing.",
+        "strong": "My unit was moving to a new charting system and the night shift was the loudest against it, mostly because training was scheduled during their sleep hours. I moved two sessions to the end of their shift and ran them myself. I also collected their five worst complaints, got three fixed by the vendor before go live, and told the unit which three, and which two weren't changing. We went live with no charting delay over 15 minutes, and two night nurses became the people others went to for help.",
+        "why": "She changed something concrete for the group that objected, and said plainly what she couldn't fix instead of selling the whole thing."
+      }
+    ]
+  }
+}
