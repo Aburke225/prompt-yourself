@@ -50,10 +50,7 @@ jobs:
       # A NEW MODEL IS A NEW SET OF HABITS. The nastiest thing this project has
       # hit was not a prompt bug: a provider dumped several hundred words of its
       # own deliberation to the visitor and then did the thing it was told not
-      # to. That came with the model, so every rotation is a chance to get it
-      # back, and only a fixed suite notices. This gate runs the six
-      # provider-sensitive cases after the swap and shouts if the new model
-      # misbehaves, rather than leaving it live until someone happens to look.
+      # to. That came with the model, and only a fixed suite notices.
       - name: wait for the new model to reach the Worker
         if: steps.publish.outputs.rotated == 'yes'
         run: |
@@ -70,8 +67,16 @@ jobs:
           echo "now letting the Worker's 5-minute cache lapse"
           sleep 330
 
-      - name: smoke the new model against the fixed suite
-        if: steps.publish.outputs.rotated == 'yes'
+      # EVERY DAY, NOT ONLY AFTER A ROTATION WE PERFORMED. A model can change
+      # underneath a model id that never changes: the gemini entry is a
+      # "-latest" alias, and Google documents that -latest "can be a stable,
+      # preview or experimental release", repointed on two weeks' email notice.
+      # When that happens models.json is untouched, so `rotated` is unset, and
+      # the liveness ping above still passes - it sends "hi" and reads the
+      # status code, which a model with brand new habits answers perfectly.
+      # Gating this on our own edits meant the one guard that can see behaviour
+      # only fired when behaviour was least likely to have changed.
+      - name: smoke the live models against the fixed suite
         id: smoke
         continue-on-error: true
         # NOT piped into tee: a pipeline reports the exit code of its LAST
@@ -83,15 +88,44 @@ jobs:
           cat smoke.txt
           exit $status
 
-      - name: open an issue if the new model misbehaves
-        if: steps.publish.outputs.rotated == 'yes' && steps.smoke.outcome == 'failure'
+      # ONE ISSUE, REUSED, AND CLOSED WHEN IT RECOVERS. On a daily trigger a
+      # bare `gh issue create` would open a fresh issue every morning until
+      # someone looked, which teaches you to ignore them. The open list is read
+      # directly rather than through `--search`, because search is indexed
+      # asynchronously and this has to be right on the first run.
+      - name: report a behaviour regression, or clear it
+        if: ${{ !cancelled() && steps.smoke.outcome != 'skipped' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Deliberately not a hard failure of the run: the model swap itself
-          # was correct and reverting it would leave a dead model in place. The
-          # bots keep working; this says which behaviour regressed so the prompt
-          # can be tightened or the model pinned past it.
+          title="Behaviour suite failing"
+          open=$(gh issue list --state open --limit 100 --json number,title \
+                 --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          if [ "${{ steps.smoke.outcome }}" != "failure" ]; then
+            # Recovered (or never broke). An open issue here is stale, and a
+            # stale one is worse than none: it makes the next real failure
+            # invisible.
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body "Passing again on $(date +%F). Closing." || true
+              gh issue close "$open" || true
+            else
+              echo "behaviour suite green"
+            fi
+            exit 0
+          fi
+          # Deliberately not a hard failure of the run: nothing here is worth
+          # reverting. If a model was rotated, reverting would put a dead model
+          # back; if nothing was rotated, there is nothing to revert to. The
+          # bots keep serving either way - this says what regressed.
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "Still failing on $(date +%F)." || true
+            exit 0
+          fi
+          if [ "${{ steps.publish.outputs.rotated }}" = "yes" ]; then
+            cause="A provider model was rotated today, so a new model arrived with new habits."
+          else
+            cause="No model id changed today, so a model changed underneath an id that did not. The gemini entry is a -latest alias, which Google may repoint to a stable, preview or experimental release without models.json moving."
+          fi
           gh issue create \
-            --title "New model fails the behaviour suite $(date +%F)" \
-            --body "$(printf 'A provider model was rotated today and the provider-sensitive cases now fail.\n\nThe bots are still serving. This is about behaviour, not availability: the most likely causes are leaked reasoning, markdown where plain text was promised, caving to pushback, or a role flip.\n\n```\n%s\n```\n\nReproduce with: node eval/run.mjs smoke\n' "$(cat smoke.txt)")" || true
+            --title "$title" \
+            --body "$(printf '%s\n\nThe bots are still serving. This is about behaviour, not availability: the most likely causes are leaked reasoning, markdown where plain text was promised, caving to pushback, or a role flip.\n\n```\n%s\n```\n\nReproduce with: node eval/run.mjs smoke\n' "$cause" "$(cat smoke.txt)")" || true
