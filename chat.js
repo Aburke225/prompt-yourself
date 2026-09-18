@@ -28,18 +28,20 @@
   // with them. The tutor's topic is the grounding query, so no topic means no
   // reference to teach from. The coach's field is what roleHint reads, and
   // without it the role-tagged questions stay out of the pool entirely.
+  // BOTH FIT TWO LINES, and the ceiling is what makes that checkable: .wrap is
+  // capped at --measure (42rem), so the bubble tops out at 559px and never
+  // grows on a bigger monitor. Measured there, both lines wrap to two under
+  // Source Serif 4 AND the Georgia/Times/serif fallbacks - worth checking,
+  // because the coach line clears it by only 9px and a wider fallback face is
+  // exactly the thing that would spend that. They hold down to a ~705px
+  // viewport, below which the wrap starts shrinking; on a phone both run to
+  // three lines, as they always have.
   var GREETINGS = {
     tutor:
-      "I'm the tutor bot. Name a topic and what you want out of it, something like: " +
+      "I'm the tutor bot! Give me a topic and your learning goal, something like: " +
       "\"The nitrogen cycle, I have a Biology test on Friday.\"",
     coach:
-      // Two lines, like the tutor's. The tutor line is the budget - 927px in
-      // the loaded serif - and the coach's example is inherently longer than
-      // "a Biology test on Friday", so the framing pays for it: "something
-      // like:" goes and the colon introduces the example instead. Checked
-      // against Source Serif 4 AND the Georgia/Times fallbacks, since a 5px
-      // margin in the webfont becomes a third line when the webfont fails.
-      "I'm the interview bot. Name the role and your background: " +
+      "I'm the interview bot! Tell me the role you're applying for and your background: " +
       "\"Staff engineer role, three years as a senior backend engineer.\"",
   };
 
