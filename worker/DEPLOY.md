@@ -58,4 +58,4 @@ A JSON `{"reply":"...","provider":"gemini"}` means it works.
   tracks the newest one automatically; you can also override models under
   **Settings → Variables** (plain-text vars, names in `wrangler.toml`).
 - When every provider's quota is exhausted, the site shows:
-  "the free bot is resting — here's the same coach as a copy-paste prompt."
+  "our free bots are resting — take a look at the guide below to create your own."

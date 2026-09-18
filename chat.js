@@ -1318,7 +1318,7 @@
   }
 
   var RESTING_MSG =
-    'the free bot is resting — take a look at the guide below to create your own.';
+    'our free bots are resting — take a look at the guide below to create your own.';
 
   // collapse: the bot is out of service, so the chat shrinks to the resting
   // message, typing goes away entirely, and the guide opens below.
