@@ -553,6 +553,30 @@
   }
   var lastCheckFailed = false;
   var lastWeak = false;
+  var lastUserText = '';   // what they actually sent, for judging the state line
+
+  // A message that is only "go on" is not an attempt at anything. The prompt
+  // says so now, but the prompt is advice and this is enforcement: a phantom
+  // fail writes a misconception into a durable profile, and a phantom score
+  // pollutes the rubric trend, so neither is accepted on the client's say-so.
+  // Token based rather than phrase based, because the real message was "Go
+  // ahead, start me off" and a fixed list of phrases will always be one comma
+  // behind. If every word is a continuation word, nothing was attempted.
+  var GO_WORDS = ('go on ahead onward carry start started starting me off again next more continue ' +
+    'ok okay sure yes yeah yep ready begin keep going please do sounds good great fine ' +
+    'lets let us now then and so i im ill will you can just').split(' ');
+  function isNonAttempt(t) {
+    var words = String(t || '').toLowerCase().replace(/[^a-z\s']/g, ' ')
+      .split(/\s+/).filter(Boolean);
+    if (!words.length || words.length > 8) return false;
+    for (var i = 0; i < words.length; i++) {
+      if (GO_WORDS.indexOf(words[i].replace(/'/g, '')) < 0) return false;
+    }
+    return true;
+  }
+  function wordCount(t) {
+    return String(t || '').split(/\s+/).filter(Boolean).length;
+  }
 
   // ---------- learning from the state line ----------
   // Defensive throughout: this is a free-tier model's self-report, so every
@@ -568,6 +592,10 @@
       }
       if (topic) reportedTopic = topic;
       var check = st.check === 'pass' || st.check === 'fail' ? st.check : 'none';
+      // measured: handed "Go ahead, start me off" the tutor reported a failed
+      // check and invented a mistake. Short answers are legitimate here
+      // ("carbon dioxide"), so the guard is on non-attempts, not on length.
+      if (check === 'fail' && isNonAttempt(lastUserText)) check = 'none';
       lastCheckFailed = check === 'fail';
       if (topic && check === 'pass') store.topics[topic].pass++;
       if (topic && check === 'fail') store.topics[topic].fail++;
@@ -601,6 +629,9 @@
       if (comp) store.covered[comp] = (store.covered[comp] || 0) + 1;
     }
     var sc = st.scores;
+    // measured: it sent scores for "A mix, please". A behavioural answer is
+    // never four words, so a short turn cannot have been scored.
+    if (sc && (wordCount(lastUserText) < 12 || isNonAttempt(lastUserText))) sc = null;
     if (sc && typeof sc === 'object') {
       var dims = ['star', 'specific', 'impact', 'ownership', 'concision'];
       var clean = {};
@@ -1038,6 +1069,7 @@
 
     pending = true;
     send.disabled = true;
+    lastUserText = text;
     clockStop();                 // they have answered; the clock is evidence now
     if (bot === 'coach' && !roleHint) {
       guessRole(text);
