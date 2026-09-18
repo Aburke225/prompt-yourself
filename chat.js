@@ -45,9 +45,7 @@
     tutor:
       "I'm the tutor bot, and we've done this before. I'll pick up from what was " +
       "still unfinished last time. Name a new topic instead if you'd rather move on.",
-    coach:
-      "Great to see you again! Let me know if what you're interviewing for has " +
-      "changed, otherwise I'll pick up where we left off.",
+    coach: "Great to see you again! Let's pick up where we left off.",
   };
 
   // where the guide lives (its own page) — the resting button points there
@@ -1032,9 +1030,16 @@
     if (bot === 'coach') {
       currentQ = pickQuestion();   // ready before the first answer arrives
     }
-    addBot(greeting);
+    var greetEl = addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
-    if (multimodal) {
+    if (!multimodal) return;
+
+    // The resume is only worth asking for once. A returning candidate already
+    // handed theirs over, or decided not to, and being asked again on every
+    // visit reads as the site having forgotten them - which is the opposite of
+    // what the profile is for. So they get one small way out instead, and the
+    // upload only comes back if they say the job has changed.
+    function showUpload() {
       var up = document.createElement('div');
       var upBtn = document.createElement('button');
       upBtn.type = 'button';
@@ -1051,8 +1056,38 @@
       up.appendChild(upBtn);
       up.appendChild(fileIn);
       msgs.appendChild(up);
+      msgs.scrollTop = msgs.scrollHeight;
       uploadRow = up;
     }
+
+    if (priorSessions < 1) {
+      showUpload();
+      return;
+    }
+
+    var switchRow = document.createElement('div');
+    var switchBtn = document.createElement('button');
+    switchBtn.type = 'button';
+    switchBtn.className = 'bc-upload bc-switch';
+    switchBtn.textContent = "I'm interviewing for something different";
+    switchBtn.addEventListener('click', function () {
+      // Becomes a first-time session in everything the candidate can see: the
+      // greeting on screen is replaced rather than added to, so the transcript
+      // does not keep a welcome back that no longer applies. History is
+      // rewritten with it too, or the model would still be working from a
+      // greeting the visitor cannot see.
+      var fresh = GREETINGS.coach;
+      greetEl.innerHTML = render(fresh);
+      for (var i = 0; i < history.length; i++) {
+        if (history[i].role === 'assistant') { history[i].content = fresh; break; }
+      }
+      switchRow.remove();
+      showUpload();
+      input.focus();
+    });
+    switchRow.appendChild(switchBtn);
+    msgs.appendChild(switchRow);
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   if (!ENDPOINT) {

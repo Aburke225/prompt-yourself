@@ -337,6 +337,15 @@ section.part { margin-bottom: 2.75rem; }
 .bc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .bc-dot.resting { background: #D98E04; }
 
+/* The returning candidate's one way out. Quieter than the upload prompt it
+   replaces, because it is an escape hatch rather than an invitation: most
+   returners are here for the same job they were here for last time. */
+.bc-switch {
+  opacity: 0.75;
+  font-size: 0.8rem;
+}
+.bc-switch:hover { opacity: 1; }
+
 /* Only ever seen when a message would be cut off. Amber rather than red: the
    text is not lost yet, it just will be if they send it as is. */
 .bc-cap-notice {
