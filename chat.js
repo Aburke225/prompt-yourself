@@ -31,18 +31,20 @@
   // BOTH FIT TWO LINES, and the ceiling is what makes that checkable: .wrap is
   // capped at --measure (42rem), so the bubble tops out at 559px and never
   // grows on a bigger monitor. Measured there, both lines wrap to two under
-  // Source Serif 4 AND the Georgia/Times/serif fallbacks - worth checking,
-  // because the coach line clears it by only 9px and a wider fallback face is
-  // exactly the thing that would spend that. They hold down to a ~705px
-  // viewport, below which the wrap starts shrinking; on a phone both run to
-  // three lines, as they always have.
+  // Source Serif 4 AND the Georgia/Times/serif fallbacks.
+  //
+  // The coach's example says "Staff engineer", not "Staff engineer role": the
+  // ask in front of it already says "the role you're applying for", so the
+  // word was doing nothing twice. Dropping it moves the point where the line
+  // becomes three from a 550px bubble to 516px - 43px of margin under the
+  // ceiling instead of 9, which is the difference between measured and lucky.
   var GREETINGS = {
     tutor:
       "I'm the tutor bot! Give me a topic and your learning goal, something like: " +
       "\"The nitrogen cycle, I have a Biology test on Friday.\"",
     coach:
       "I'm the interview bot! Tell me the role you're applying for and your background: " +
-      "\"Staff engineer role, three years as a senior backend engineer.\"",
+      "\"Staff engineer, three years as a senior backend engineer.\"",
   };
 
   // A returning visitor gets its own greeting rather than the new-visitor one

@@ -380,7 +380,12 @@ async function handleChess(request, env, url) {
 // error and never a charge - the same shape as every other provider here. The
 // page falls back to speechSynthesis on ANY failure, so a spent quota costs
 // the nice voice, never the conversation.
-const TTS_VOICE_ID = 'G17SuINrv2H9FC6nvetn';
+// A premade ElevenLabs voice, not a Voice Library one - which matters, because
+// the free tier cannot call Library voices through the API and the first voice
+// tried here came back 402 Payment Required for exactly that reason.
+// ELEVENLABS_VOICE_ID overrides it, so a different voice can be tried from the
+// dashboard without touching this file.
+const TTS_VOICE_ID = 'onwK4e9ZLuTAKqWW03F9';
 // Flash: ~75ms and HALF a credit per character rather than one, which doubles
 // what the monthly allowance buys. Turbo v2.5 is deprecated in favour of it.
 const TTS_MODEL = 'eleven_flash_v2_5';
