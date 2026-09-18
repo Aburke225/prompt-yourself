@@ -2,5 +2,15 @@
  "gemini": "gemini-flash-lite-latest",
  "groq": "openai/gpt-oss-120b",
  "openrouter": "openrouter/free",
- "updated": "2026-09-17"
+ "updated": "2026-09-17",
+ "scores": {
+  "gemini": 10.0,
+  "groq": 10.0,
+  "openrouter": 5.0
+ },
+ "order": [
+  "gemini",
+  "groq",
+  "openrouter"
+ ]
 }
