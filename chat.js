@@ -180,10 +180,15 @@
   // write is guarded because a private window throws on access rather than
   // returning empty.
   var STORE_KEY = 'py-' + bot + '-v1';
+  // label  = what is being worked on right now. Its presence IS the definition
+  //          of an unfinished session, which is what the greeting turns on.
+  // done   = the ones that were closed out, each with a date. This is the only
+  //          thing that survives switching, so it is the visitor's record of
+  //          what they have actually been through.
   function freshStore() {
     return bot === 'coach'
-      ? { sessions: 0, asked: [], covered: {}, scores: [], best: null }
-      : { sessions: 0, topics: {}, open: [], settled: [] };
+      ? { sessions: 0, asked: [], covered: {}, scores: [], best: null, label: '', done: [] }
+      : { sessions: 0, topics: {}, open: [], settled: [], label: '', done: [] };
   }
   function loadStore() {
     try {
@@ -853,6 +858,59 @@
     return String(t || '').split(/\s+/).filter(Boolean).length;
   }
 
+  // ---------- finishing a session ----------
+  // FINISHED AND WIPED ARE DIFFERENT THINGS, and conflating them loses work.
+  //
+  // Finishing just means this one is over: the bot delivered its closing
+  // debrief or recap, or the visitor pressed the switch button. That archives
+  // the label and clears it, and clearing it is what makes the next visit a
+  // first-time visit - being welcomed back to something you already finished
+  // is the thing that made the old greeting feel wrong.
+  //
+  // Wiping is heavier and only the switch button does it, because only the
+  // switch button says the NEXT thing is unrelated. Finishing a debrief and
+  // coming back to the same role should keep the scores, or the trend line in
+  // progress resets every time the visitor does the polite thing and asks for
+  // feedback at the end.
+  function archiveLabel() {
+    var label = String(store.label || '').trim();
+    if (label) {
+      store.done = store.done || [];
+      var seen = false;
+      for (var i = 0; i < store.done.length; i++) {
+        if (store.done[i] && store.done[i].label === label) { seen = true; break; }
+      }
+      if (!seen) {
+        store.done.push({ label: label, at: new Date().toISOString().slice(0, 10) });
+        if (store.done.length > 12) store.done.shift();
+      }
+    }
+    store.label = '';
+    saveStore();
+  }
+  function wipeWorking() {
+    if (bot === 'tutor') {
+      store.topics = {};
+      store.open = [];
+      store.settled = [];
+    } else {
+      store.asked = [];
+      store.covered = {};
+      store.scores = [];
+      store.best = null;
+    }
+    saveStore();
+  }
+  // The coach's state line has no role field, and asking the model for one is
+  // a fifth thing it can get wrong. The visitor already typed the role in
+  // their opening message, so the label is the part before the first comma:
+  // "Staff engineer, three years as a senior backend engineer." -> "Staff
+  // engineer". The tutor needs none of this - its state line reports the topic.
+  function roleLabel(t) {
+    var head = String(t || '').split(/[,\u2014\u2013\n;]|(?:\s-\s)/)[0].trim();
+    return head.slice(0, 40);
+  }
+
   // ---------- learning from the state line ----------
   // Defensive throughout: this is a free-tier model's self-report, so every
   // field is treated as absent until it proves otherwise. A wrong or missing
@@ -865,7 +923,10 @@
         store.topics = store.topics || {};
         store.topics[topic] = store.topics[topic] || { pass: 0, fail: 0 };
       }
-      if (topic) reportedTopic = topic;
+      if (topic) {
+        reportedTopic = topic;
+        store.label = topic;   // latest wins: the topic gets sharper as it goes
+      }
       var check = st.check === 'pass' || st.check === 'fail' ? st.check : 'none';
       // measured: handed "Go ahead, start me off" the tutor reported a failed
       // check and invented a mistake. Short answers are legitimate here
@@ -888,6 +949,7 @@
         if (store.settled.indexOf(settled) < 0) store.settled.push(settled);
         if (store.settled.length > 12) store.settled.shift();
       }
+      if (st.done === true) archiveLabel();
       saveStore();
       return;
     }
@@ -933,6 +995,7 @@
         if (store.best === null || total > store.best) store.best = total;
       }
     }
+    if (st.done === true) archiveLabel();
     // hand the next question forward so it is in context before it is needed
     if (qid) {
       var next = pickQuestion();
@@ -945,10 +1008,30 @@
   // The reason to keep any of this is that the visitor can see it. A score with
   // no trend is a number; a score next to last session's is a reason to come
   // back. Rendered into the transcript on demand, never sent anywhere.
+  // The record that survives a switch. Short on purpose: what it was, and that
+  // it is done. A list of past topics with ticks answers "have I been keeping
+  // this up" in one glance, which is the only question a progress panel on a
+  // practice site is really being asked.
+  function doneLine() {
+    var d = store.done || [];
+    if (!d.length) return '';
+    var label = bot === 'coach' ? 'Interviews finished: ' : 'Topics finished: ';
+    return label + d.map(function (x) { return x.label + ' \u2713'; }).join(', ') + '.';
+  }
+  function currentLine() {
+    var l = String(store.label || '').trim();
+    return l ? (bot === 'coach' ? 'Currently interviewing for: ' : 'Currently learning: ') + l + '.' : '';
+  }
+
   function progressText() {
     if (bot === 'coach') {
       var sc = store.scores || [];
-      if (!sc.length) return 'No scored answers yet. Answer a question and I will score it.';
+      if (!sc.length) {
+        var none = ['No scored answers yet. Answer a question and I will score it.'];
+        if (currentLine()) none.push(currentLine());
+        if (doneLine()) none.push(doneLine());
+        return none.join('\n');
+      }
       var dims = ['star', 'specific', 'impact', 'ownership', 'concision'];
       var mean = function (arr, d) {
         var v = arr.map(function (x) { return (x.scores && x.scores[d]) || 0; });
@@ -974,10 +1057,16 @@
         return !(store.covered || {})[c];
       });
       if (miss.length) out.push('Not yet touched: ' + miss.join(', ') + '.');
+      if (currentLine()) out.push(currentLine());
+      if (doneLine()) out.push(doneLine());
       return out.join('\n');
     }
     var names = Object.keys(store.topics || {});
-    if (!names.length) return 'Nothing tracked yet. Name a topic and I will start keeping score.';
+    if (!names.length) {
+      var blank = ['Nothing tracked yet. Name a topic and I will start keeping score.'];
+      if (doneLine()) blank.push(doneLine());
+      return blank.join('\n');
+    }
     var out2 = ['Sessions: ' + store.sessions + '.'];
     names.forEach(function (t) {
       var r = store.topics[t];
@@ -985,6 +1074,7 @@
     });
     if ((store.settled || []).length) out2.push('Settled: ' + store.settled.join('; '));
     if ((store.open || []).length) out2.push('Still open: ' + store.open.join('; '));
+    if (doneLine()) out2.push(doneLine());
     return out2.join('\n');
   }
 
@@ -1243,7 +1333,14 @@
       d.classList.add('bc-report');
     });
     headTools.appendChild(progBtn);
-    var greeting = priorSessions > 0
+    // WELCOME BACK TO WHAT? Having been here before is not a reason to skip the
+    // opening - only an unfinished session is, because that is the only case
+    // where there is something to pick up. A finished one gets the first-time
+    // greeting, which is correct: there is nothing to resume. Each bot decides
+    // this from its own store, so a live tutor topic and a finished interview
+    // give you a welcome back on one page and a fresh start on the other.
+    var unfinished = !!String(store.label || '').trim();
+    var greeting = (priorSessions > 0 && unfinished)
       ? (RETURNING[bot] || RETURNING.tutor)
       : (GREETINGS[bot] || GREETINGS.tutor);
     if (bot === 'coach') {
@@ -1278,7 +1375,9 @@
       uploadRow = up;
     }
 
-    if (priorSessions < 1) {
+    // Only offered alongside the welcome back, because "something different"
+    // only means anything when there is a current something.
+    if (priorSessions < 1 || !String(store.label || '').trim()) {
       if (multimodal) showUpload();
       return;
     }
@@ -1301,6 +1400,13 @@
       for (var i = 0; i < history.length; i++) {
         if (history[i].role === 'assistant') { history[i].content = fresh; break; }
       }
+      // Switching is the one place that wipes: the next thing is unrelated, so
+      // carrying over open misconceptions or a half-covered competency map
+      // would aim the bot at the wrong subject.
+      archiveLabel();
+      wipeWorking();
+      askedThisSession = 0;
+      currentQ = bot === 'coach' ? pickQuestion() : null;
       switchRow.remove();
       if (multimodal) showUpload();
       input.focus();
@@ -1389,6 +1495,11 @@
     input.value = '';
     autogrow();
     checkLength();
+    // the opening message is where the coach's role comes from
+    if (bot === 'coach' && !store.label && !isNonAttempt(text) && wordCount(text) >= 2) {
+      store.label = roleLabel(text);
+      saveStore();
+    }
     addUser(text, image);
     var msg = { role: 'user', content: text };
     if (image) msg.image = image;

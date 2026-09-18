@@ -11,14 +11,20 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:8000',
 ];
 
-// Visitor limits (in-memory, per Worker isolate — resets when the isolate is
-// recycled, so treat it as a speed bump; the providers' own free-tier quotas
-// are the hard backstop that keeps everything at $0).
-// generous per person: multiple full sessions with both bots in one sitting.
-// Traffic is 2-4 visitors/day, so even everyone maxing out stays inside the
-// combined free tiers of Gemini + Groq + OpenRouter.
-const PER_IP_PER_HOUR = 100;
-const GLOBAL_PER_DAY = 600;
+// NO PER-PERSON LIMIT. One visitor is welcome to use the whole day if they are
+// the only one here, which at 2-4 visitors/day is the normal case; cutting
+// someone off mid-session to reserve capacity for a visitor who never arrives
+// is the worse trade. The only ceiling is site-wide.
+//
+// GLOBAL_PER_DAY IS A GUARD, NOT CAPACITY. It cannot create provider quota: it
+// only decides which wall gets hit first. Under it, an exhausted day answers a
+// clean 429; over it, all three providers fail instead and the site drops into
+// its 10-minute resting state with the copy-paste fallback. Both are graceful,
+// which is why the exact number is a policy choice rather than a measurement.
+// (In-memory, per Worker isolate, so it resets when the isolate is recycled -
+// a speed bump. The providers' own free tiers are the hard backstop that keeps
+// this at $0.)
+const GLOBAL_PER_DAY = 1000;
 
 // NO LENGTH CAP. Nothing a visitor types is cut or dropped: the per-message
 // slice and the whole-conversation trim are both gone, so a pasted resume or a
@@ -224,39 +230,26 @@ async function openAiStyle(url, key, model, system, messages) {
 }
 
 // ---- rate limiting (best-effort, in-memory) ----
-const ipHits = new Map(); // ip -> [timestamps]
 let dayStamp = '';
 let dayCount = 0;
 let lastAllFail = 0; // when every provider last failed; page checks via GET
 const lastProviderErrors = []; // last few failures, visible via the keyed /debug route
 const RESTING_WINDOW_MS = 10 * 60 * 1000;
 
-// check without recording a hit — used by the GET status endpoint
-function peekLimited(ip) {
-  const now = Date.now();
+// check without recording a hit — used by the GET status endpoint and by /tts
+function peekLimited() {
   const today = new Date().toISOString().slice(0, 10);
-  if (today === dayStamp && dayCount >= GLOBAL_PER_DAY) return true;
-  const hits = (ipHits.get(ip) || []).filter((t) => now - t < 3600_000);
-  return hits.length >= PER_IP_PER_HOUR;
+  return today === dayStamp && dayCount >= GLOBAL_PER_DAY;
 }
 
-function rateLimited(ip) {
-  const now = Date.now();
+function rateLimited() {
   const today = new Date().toISOString().slice(0, 10);
   if (today !== dayStamp) {
     dayStamp = today;
     dayCount = 0;
   }
   if (dayCount >= GLOBAL_PER_DAY) return true;
-  const hits = (ipHits.get(ip) || []).filter((t) => now - t < 3600_000);
-  if (hits.length >= PER_IP_PER_HOUR) {
-    ipHits.set(ip, hits);
-    return true;
-  }
-  hits.push(now);
-  ipHits.set(ip, hits);
   dayCount += 1;
-  if (ipHits.size > 5000) ipHits.clear(); // crude memory cap
   return false;
 }
 
@@ -498,18 +491,16 @@ export default {
     // and the ElevenLabs key's own monthly character limit is the hard ceiling.
     if (url.pathname === '/tts') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405, origin);
-      const ttsIp = request.headers.get('cf-connecting-ip') || 'unknown';
-      if (peekLimited(ttsIp)) return json({ error: 'rate_limited' }, 429, origin);
+      if (peekLimited()) return json({ error: 'rate_limited' }, 429, origin);
       return handleTts(request, env, origin);
     }
     if (request.method === 'GET') {
-      // page-load health check: is the bot resting or this visitor limited?
-      const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+      // page-load health check: is the bot resting, or is the site's day spent?
       return json(
         {
           ok: true,
           resting: Date.now() - lastAllFail < RESTING_WINDOW_MS,
-          limited: peekLimited(ip),
+          limited: peekLimited(),
           // Zero means unlimited, and the page reads it that way: it stops
           // warning about length entirely. Reporting it rather than
           // hard-coding it means an older deployed Worker still gets the
@@ -524,8 +515,7 @@ export default {
       return json({ error: 'method' }, 405, origin);
     }
 
-    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-    if (rateLimited(ip)) {
+    if (rateLimited()) {
       return json({ error: 'rate_limited' }, 429, origin);
     }
 
