@@ -20,17 +20,24 @@ const ALLOWED_ORIGINS = [
 const PER_IP_PER_HOUR = 100;
 const GLOBAL_PER_DAY = 600;
 
-// Tripled from 16 / 4000 / 20000. The old per-message cap was applied by
-// silently slicing, so a visitor who pasted a long resume as text lost the tail
-// without being told, and the session context block now rides on their latest
-// message too, which ate into the same allowance. 12000 characters is around
-// 2000 words, past anything anyone types into a chat box on purpose.
-// Cost note for the $0 rule: this raises the CEILING, not normal usage. A
-// typical turn is unchanged. The worst case is about 15000 tokens of input on
-// one request, which free tiers meter but do not bill.
+// NO LENGTH CAP. Nothing a visitor types is cut or dropped: the per-message
+// slice and the whole-conversation trim are both gone, so a pasted resume or a
+// wall of notes goes through whole. The only limit left is the model's own, and
+// that one announces itself instead of quietly eating the end of a sentence.
+//
+// MAX_MESSAGES stays as a window rather than a cap. It loses nothing anyone
+// typed - older turns simply scroll out of the model's view, the way every
+// chat works - and without it a long session would resend its entire history
+// on every single turn.
+//
+// What removing the caps hands over is the failure mode, which is why the
+// oversized case is classified separately below: a request too big for every
+// provider must not look like every provider being down.
 const MAX_MESSAGES = 48;
-const MAX_MESSAGE_CHARS = 12000;
-const MAX_TOTAL_CHARS = 60000;
+// Not a cap on what is accepted or sent. Purely the line above which an
+// all-provider failure is read as "too long for the free models" instead of
+// "the free models are down" - about 30k tokens, past any real message.
+const LIKELY_TOO_LONG_CHARS = 120000;
 const MAX_OUTPUT_TOKENS = 1024;
 
 // Live prompts are fetched from the site (prompts.json in this repo) and
@@ -404,15 +411,11 @@ export default {
           ok: true,
           resting: Date.now() - lastAllFail < RESTING_WINDOW_MS,
           limited: peekLimited(ip),
-          // The client warns before it truncates, so it has to know the real
-          // number. Reporting it here means the page is correct against
-          // whatever Worker is actually deployed, instead of hard-coding a
-          // figure that goes stale the moment these constants change.
-          limits: {
-            messageChars: MAX_MESSAGE_CHARS,
-            totalChars: MAX_TOTAL_CHARS,
-            messages: MAX_MESSAGES,
-          },
+          // Zero means unlimited, and the page reads it that way: it stops
+          // warning about length entirely. Reporting it rather than
+          // hard-coding it means an older deployed Worker still gets the
+          // conservative warning instead of a promise this one cannot keep.
+          limits: { messageChars: 0, totalChars: 0, messages: MAX_MESSAGES },
         },
         200,
         origin
@@ -456,7 +459,7 @@ export default {
       )
       .slice(-MAX_MESSAGES)
       .map((m) => {
-        const out = { role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) };
+        const out = { role: m.role, content: m.content };
         if (
           m.role === 'user' &&
           typeof m.image === 'string' &&
@@ -468,12 +471,6 @@ export default {
         return out;
       });
     for (let i = 0; i < messages.length - 1; i++) delete messages[i].image;
-    while (
-      messages.length > 1 &&
-      messages.reduce((n, m) => n + m.content.length, 0) > MAX_TOTAL_CHARS
-    ) {
-      messages.shift();
-    }
     if (messages.length === 0 || messages[messages.length - 1].role !== 'user') {
       return json({ error: 'bad_request' }, 400, origin);
     }
@@ -498,6 +495,16 @@ export default {
     if (hasImage) {
       // text chat may still be fine — don't put the whole bot to rest
       return json({ error: 'image_unavailable' }, 503, origin);
+    }
+    // ONE OVERSIZED REQUEST MUST NOT REST THE BOTS FOR EVERYONE. The resting
+    // flag is read by every visitor's page load, so setting it here would let
+    // one person pasting a book take the site down for ten minutes. With no
+    // length cap that stopped being hypothetical, so a failure on an enormous
+    // payload is reported to that visitor alone - the same call the image path
+    // above already makes for the same reason.
+    const totalChars = messages.reduce((n, m) => n + m.content.length, 0);
+    if (totalChars > LIKELY_TOO_LONG_CHARS) {
+      return json({ error: 'too_long', chars: totalChars }, 413, origin);
     }
     lastAllFail = Date.now();
     return json({ error: 'resting' }, 503, origin);

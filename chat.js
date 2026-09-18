@@ -1097,7 +1097,12 @@
       .then(function (res) { return res.json(); })
       .then(function (s) {
         boot.remove();
-        if (s && s.limits && s.limits.messageChars > 0) msgCap = s.limits.messageChars;
+        // zero means the deployed Worker has no length cap, so there is
+        // nothing to warn about; a Worker that reports nothing at all is an
+        // older one and keeps the conservative 4000
+        if (s && s.limits && typeof s.limits.messageChars === 'number') {
+          msgCap = s.limits.messageChars > 0 ? s.limits.messageChars : Infinity;
+        }
         if (s.limited) collapse(LIMIT_MSG);
         else if (s.resting) collapse(RESTING_MSG);
         else goLive();
@@ -1230,6 +1235,9 @@
           if (multimodal) clockGo();   // their turn: the clock starts again
         } else if (r.status === 429) {
           collapse(LIMIT_MSG);
+        } else if (r.data && r.data.error === 'too_long') {
+          addBot('That was too long for the free models to read in one go. ' +
+                 'Send it in two halves and I will keep both in mind.');
         } else if (r.data && r.data.error === 'image_unavailable') {
           addBot("I can't see drawings right now — describe it in words instead.");
         } else {
