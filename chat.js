@@ -87,17 +87,23 @@
   drawBtn.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
 
-  // mic button — speak instead of type (browser speech-to-text, no server)
+  // A headset, not a microphone. A microphone means "dictate into this box",
+  // which is what this used to do; a headset means "talk to it", which is what
+  // it does now. The state lives on this button and in the input's placeholder,
+  // since there is no longer a labelled button in the status strip to carry it.
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var micBtn = null;
   if (SR && multimodal) {
     micBtn = document.createElement('button');
     micBtn.type = 'button';
-    micBtn.className = 'bc-icon';
-    micBtn.setAttribute('aria-label', 'Speak your answer');
-    micBtn.title = 'Speak';
+    micBtn.className = 'bc-icon bc-hands';
     micBtn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/>' +
+      '<rect x="2" y="13" width="4.5" height="7" rx="2.25"/>' +
+      '<rect x="17.5" y="13" width="4.5" height="7" rx="2.25"/>' +
+      '<path d="M19.75 20v1.2a2 2 0 0 1-2 2H14"/>' +
+      '</svg>';
   }
 
   form.appendChild(input);
@@ -429,14 +435,14 @@
 
   // ---------- voice out ----------
   // The coach already listens; this makes it speak. A spoken question answered
-  // out loud under a clock is the actual skill being practised, and typing at a
+  // out loud is the actual skill being practised, and typing at a
   // silent interviewer trains something else. Tutor stays silent: reading an
   // explanation at your own pace beats having it read to you.
   // ---------- hands-free conversation ----------
   // The old control was a voice-on toggle, which read questions aloud while
   // the candidate still typed and still pressed send. That trains the wrong
-  // thing: a real interview is spoken both ways under a clock, and stopping to
-  // type between answers is the part that does not happen on the day.
+  // thing: a real interview is spoken both ways, and stopping to type between
+  // answers is the part that does not happen on the day.
   //
   // So this is a mode, not a setting. It listens, notices when they have
   // stopped talking, sends on its own, speaks the reply, and listens again.
@@ -444,6 +450,50 @@
   // pace is the better experience everywhere else, so the bot is silent
   // outside this mode and there is no separate switch for it.
   var TTS = 'speechSynthesis' in window;
+
+  // ---------- which voice ----------
+  // The browser can only offer what the visitor's own machine has installed,
+  // so this cannot be one hard-coded name: a choice made here would silently
+  // fall back to whatever the next machine defaults to, which on a Mac is
+  // Samantha and sounds two decades old. So there is a preference order, a
+  // per-visitor override, and a picker that speaks a sample on change, because
+  // "Reed" and "Flo" tell nobody anything until they hear them.
+  //
+  // macOS ships a pile of novelty voices - Bells, Boing, Zarvox, Bubbles - that
+  // sing or joke rather than speak. Whatever they are for, it is not conducting
+  // an interview, so they are kept out of the list entirely.
+  var VOICE_NOVELTY = /^(bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|fred|junior|ralph|kathy|grandma|grandpa|rocko)\b/i;
+  // Ordered best first. Newer system voices beat the legacy ones, and a
+  // measured neutral voice suits an interviewer better than a bright one.
+  var VOICE_PREFERRED = ['Daniel', 'Reed', 'Flo', 'Sandy', 'Shelley', 'Karen',
+                         'Moira', 'Tessa', 'Google UK English Male',
+                         'Google US English', 'Microsoft Guy', 'Microsoft Aria',
+                         'Samantha'];
+  var voiceChoice = '';
+  try { voiceChoice = localStorage.getItem('py-voice-name') || ''; } catch (e) {}
+
+  function usableVoices() {
+    if (!TTS) return [];
+    var all = [];
+    try { all = window.speechSynthesis.getVoices() || []; } catch (e) { return []; }
+    return all.filter(function (v) {
+      return /^en/i.test(v.lang) && !VOICE_NOVELTY.test(v.name);
+    });
+  }
+  function pickVoice() {
+    var list = usableVoices();
+    if (!list.length) return null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].name === voiceChoice) return list[i];
+    }
+    for (var j = 0; j < VOICE_PREFERRED.length; j++) {
+      for (var k = 0; k < list.length; k++) {
+        if (list[k].name.indexOf(VOICE_PREFERRED[j]) === 0) return list[k];
+      }
+    }
+    return list[0];
+  }
+
   var talking = false;      // in a hands-free session
   var speaking = false;     // the bot has the floor
   var convoRec = null;
@@ -452,15 +502,28 @@
   // silence does not feel like a dropped call. Behavioural answers are full of
   // pauses, so this errs generous.
   var HUSH_MS = 2000;
-  var talkBtn = null;
 
+  // With the labelled button gone, the state has to be legible from the icon
+  // and the input. The icon carries whose turn it is by colour, and the
+  // placeholder says it in words, which is the one spot the eye already goes
+  // when it expects to type.
+  var PLACEHOLDER = 'Message…';
   function paintTalk(state) {
-    if (!talkBtn) return;
-    talkBtn.textContent = state;
-    talkBtn.classList.toggle('live', talking);
-    talkBtn.title = talking
-      ? 'End the spoken session and go back to typing'
-      : 'Talk to the interviewer out loud, hands free';
+    if (!micBtn) return;
+    micBtn.classList.toggle('live', talking);
+    micBtn.classList.toggle('hearing', talking && state === 'listening');
+    micBtn.classList.toggle('talking', talking && state === 'speaking');
+    var label = !talking
+      ? 'Start a hands-free spoken session'
+      : state === 'listening' ? 'Listening. Click to end the spoken session'
+      : state === 'speaking' ? 'Speaking. Click to end the spoken session'
+      : 'Thinking. Click to end the spoken session';
+    micBtn.title = label;
+    micBtn.setAttribute('aria-label', label);
+    input.placeholder = !talking ? PLACEHOLDER
+      : state === 'listening' ? 'Listening…'
+      : state === 'speaking' ? 'Speaking…'
+      : 'Thinking…';
   }
 
   function speak(text, done) {
@@ -470,6 +533,8 @@
       // the state line is already stripped; strip stray punctuation runs so it
       // does not read symbols aloud
       var u = new SpeechSynthesisUtterance(String(text).replace(/[*_`#>]/g, ''));
+      var chosen = pickVoice();
+      if (chosen) { u.voice = chosen; u.lang = chosen.lang; }
       u.rate = 1.02;
       var fired = false;
       function finish() {
@@ -520,8 +585,8 @@
       }
       input.value = (heard + interim).replace(/^\s+/, '');
       autogrow();
-      // every scrap of speech restarts the clock, so the send only happens
-      // once they have actually stopped
+      // every scrap of speech restarts the silence timer, so the send only
+      // happens once they have actually stopped
       clearTimeout(hushTimer);
       if (input.value.trim()) {
         hushTimer = setTimeout(function () {
@@ -581,59 +646,12 @@
     input.focus();
   }
 
-  if (SR && TTS && multimodal) {
-    talkBtn = document.createElement('button');
-    talkBtn.type = 'button';
-    talkBtn.className = 'bc-head-btn bc-talk';
+  if (SR && TTS && multimodal && micBtn) {
     paintTalk('talk');
-    talkBtn.addEventListener('click', function () {
+    micBtn.addEventListener('click', function () {
       if (talking) stopTalking();
       else startTalking();
     });
-  }
-
-  // ---------- the answer clock ----------
-  // Starts when the interviewer finishes asking and stops when the answer is
-  // sent, so the elapsed time can be handed to the coach as evidence. It is
-  // reported, not enforced: a hard cut-off would punish a good long answer,
-  // while the number lets the coach say "that ran four minutes" and mean it.
-  var clockEl = null;
-  var clockStart = 0;
-  var clockTimer = null;
-  var lastAnswerSecs = 0;
-  if (multimodal) {
-    clockEl = document.createElement('span');
-    clockEl.className = 'bc-clock';
-    clockEl.hidden = true;
-  }
-  function fmtSecs(n) {
-    var m = Math.floor(n / 60);
-    var s2 = n % 60;
-    return m ? m + ':' + (s2 < 10 ? '0' : '') + s2 : n + 's';
-  }
-  function clockGo() {
-    if (!clockEl) return;
-    clockStart = Date.now();
-    clockEl.hidden = false;
-    clockEl.classList.remove('over');
-    function tick() {
-      var secs = Math.round((Date.now() - clockStart) / 1000);
-      clockEl.textContent = fmtSecs(secs);
-      // 120s is the shape of a good behavioural answer, not a rule
-      if (secs > 120) clockEl.classList.add('over');
-    }
-    tick();
-    clearInterval(clockTimer);
-    clockTimer = setInterval(tick, 1000);
-  }
-  function clockStop() {
-    if (!clockEl || !clockStart) return 0;
-    clearInterval(clockTimer);
-    clockTimer = null;
-    lastAnswerSecs = Math.round((Date.now() - clockStart) / 1000);
-    clockStart = 0;
-    clockEl.hidden = true;
-    return lastAnswerSecs;
   }
 
   // ---------- the context block ----------
@@ -693,9 +711,6 @@
       var cov = Object.keys(store.covered || {});
       if (cov.length) {
         lines.push('COVERED so far: ' + cov.map(function (c) { return c + ' x' + store.covered[c]; }).join(', ') + '. Do not drift back to these while others are untouched.');
-      }
-      if (lastAnswerSecs) {
-        lines.push('They took ' + lastAnswerSecs + ' seconds to answer aloud. Mention pacing only if it is notably long (over two minutes) or clipped (under twenty seconds).');
       }
       if (askedThisSession >= 5) {
         lines.push('This is question ' + (askedThisSession + 1) + '. Close with the debrief soon, and cite the rubric scores you have been giving.');
@@ -813,7 +828,6 @@
           qid: qid || null,
           competency: (currentQ && currentQ.competency) || null,
           scores: clean,
-          seconds: lastAnswerSecs || null,
         });
         if (store.scores.length > 200) store.scores.shift();
         // a weak answer is what earns an exemplar on the next turn
@@ -997,45 +1011,6 @@
     input.focus();
   });
 
-  // ---------- voice input ----------
-  if (micBtn) {
-    var rec = null;
-    var listening = false;
-    micBtn.addEventListener('click', function () {
-      if (listening) {
-        rec.stop();
-        return;
-      }
-      rec = new SR();
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.lang = document.documentElement.lang || 'en-US';
-      var base = input.value ? input.value.replace(/\s+$/, '') + ' ' : '';
-      var finals = '';
-      rec.onresult = function (ev) {
-        var interim = '';
-        for (var i = ev.resultIndex; i < ev.results.length; i++) {
-          if (ev.results[i].isFinal) finals += ev.results[i][0].transcript;
-          else interim += ev.results[i][0].transcript;
-        }
-        input.value = base + finals + interim;
-        autogrow();
-      };
-      rec.onend = function () {
-        listening = false;
-        micBtn.classList.remove('listening');
-        input.focus();
-      };
-      rec.onerror = function () {
-        listening = false;
-        micBtn.classList.remove('listening');
-      };
-      rec.start();
-      listening = true;
-      micBtn.classList.add('listening');
-    });
-  }
-
   var lastProvider = '';
 
   function setStatus(live) {
@@ -1136,8 +1111,49 @@
 
   function goLive() {
     setStatus(true);
-    if (clockEl) headTools.appendChild(clockEl);
-    if (talkBtn) headTools.appendChild(talkBtn);
+    // The picker lives where the talk button used to, and only appears when
+    // there is a real choice to make: one voice, or none, and it stays hidden.
+    if (TTS && multimodal) {
+      var voiceSel = document.createElement('select');
+      voiceSel.className = 'bc-head-sel';
+      voiceSel.setAttribute('aria-label', 'Interviewer voice');
+      voiceSel.title = 'Pick the interviewer voice';
+      function fillVoices() {
+        var list = usableVoices();
+        if (list.length < 2) { voiceSel.hidden = true; return; }
+        var current = pickVoice();
+        voiceSel.hidden = false;
+        voiceSel.innerHTML = '';
+        list.forEach(function (v) {
+          var o = document.createElement('option');
+          o.value = v.name;
+          // the accent is the useful part of the name to a chooser
+          o.textContent = v.name.replace(/\s*\(English \(([^)]+)\)\)/, ' ($1)');
+          if (current && v.name === current.name) o.selected = true;
+          voiceSel.appendChild(o);
+        });
+      }
+      fillVoices();
+      // the list is usually empty on first paint and arrives a moment later
+      try { window.speechSynthesis.onvoiceschanged = fillVoices; } catch (e) {}
+      voiceSel.addEventListener('change', function () {
+        voiceChoice = voiceSel.value;
+        try { localStorage.setItem('py-voice-name', voiceChoice); } catch (e) {}
+        // A name means nothing until it is heard, and this is the line they
+        // will actually hear it say, so the sample is a real question.
+        try {
+          window.speechSynthesis.cancel();
+          var u = new SpeechSynthesisUtterance(
+            'Tell me about a time you disagreed with a teammate.');
+          var v = pickVoice();
+          if (v) { u.voice = v; u.lang = v.lang; }
+          u.rate = 1.02;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      });
+      headTools.appendChild(voiceSel);
+    }
+
     var progBtn = document.createElement('button');
     progBtn.type = 'button';
     progBtn.className = 'bc-head-btn';
@@ -1296,7 +1312,6 @@
     pending = true;
     send.disabled = true;
     lastUserText = text;
-    clockStop();                 // they have answered; the clock is evidence now
     if (bot === 'coach' && !roleHint) {
       guessRole(text);
       var reQ = pickQuestion();  // re-pick now that the role is known
@@ -1359,7 +1374,6 @@
           applyState(got.state);
           addBot(got.clean);
           history.push({ role: 'assistant', content: got.clean });
-          if (multimodal) clockGo();   // their turn: the clock starts again
           // closing the loop: the mic comes back only once the bot has stopped
           // talking, or it would transcribe the interviewer's own question
           speak(got.clean, function () {

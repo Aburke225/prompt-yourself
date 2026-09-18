@@ -337,22 +337,21 @@ section.part { margin-bottom: 2.75rem; }
 .bc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .bc-dot.resting { background: #D98E04; }
 
-/* The talk button carries the state of the spoken session - talk, listening,
-   thinking, speaking - so the candidate can tell whose turn it is without a
-   second indicator competing with the status strip. The pulse only runs while
-   the session is live. */
-.bc-talk.live {
-  color: var(--accent);
-  border-color: var(--accent);
-  animation: bc-pulse 1.6s ease-in-out infinite;
-}
+/* The headset carries the state of the spoken session. It has no text, so
+   colour does the work: accent while the session is live, pulsing only while
+   it is actually listening, steady while the bot has the floor. The input's
+   placeholder says the same thing in words for anyone who needs it spelled
+   out, which is also what carries it for a screen reader. */
+.bc-hands.live { color: var(--accent); }
+.bc-hands.hearing { animation: bc-pulse 1.4s ease-in-out infinite; }
+.bc-hands.talking { opacity: 0.55; }
 @keyframes bc-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
+  50% { opacity: 0.45; }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* the label already says which turn it is, so the pulse is decoration */
-  .bc-talk.live { animation: none; }
+  /* the placeholder already says which turn it is, so the pulse is decoration */
+  .bc-hands.hearing { animation: none; }
 }
 
 /* The returning candidate's one way out. Quieter than the upload prompt it
@@ -396,15 +395,33 @@ section.part { margin-bottom: 2.75rem; }
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .bc-head-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface-2, transparent); }
-.bc-head-btn[aria-pressed="false"] { opacity: 0.6; }
-/* tabular figures so a ticking clock does not shift the buttons beside it */
-.bc-clock {
-  font-variant-numeric: tabular-nums;
+/* The voice picker sits in the same strip and has to look like it belongs
+   there rather than like a form control dropped into a status bar. Native
+   select chrome is suppressed; the caret is the only affordance kept. */
+.bc-head-sel {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
   color: var(--muted);
-  min-width: 2.6em;
-  text-align: right;
+  font: inherit;
+  letter-spacing: 0.06em;
+  padding: 0.16rem 1.1rem 0.16rem 0.45rem;
+  border-radius: 5px;
+  cursor: pointer;
+  max-width: 8.5rem;
+  text-overflow: ellipsis;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 0.55rem) 55%, calc(100% - 0.35rem) 55%;
+  background-size: 0.2rem 0.2rem, 0.2rem 0.2rem;
+  background-repeat: no-repeat;
 }
-.bc-clock.over { color: #D98E04; }
+.bc-head-sel:hover { color: var(--text); border-color: var(--accent); }
+/* the options themselves render in the OS menu, which ignores most of this,
+   so give them a readable ground in dark mode rather than nothing */
+.bc-head-sel option { color: var(--text); background: var(--surface); }
+@media (max-width: 520px) { .bc-head-sel { max-width: 5.5rem; } }
+.bc-head-btn[aria-pressed="false"] { opacity: 0.6; }
 /* the progress read-out is a transcript line, but it is data rather than
    speech, so it gets the mono face and keeps its own line breaks */
 .bc-report {
@@ -485,13 +502,6 @@ section.part { margin-bottom: 2.75rem; }
 }
 .bc-icon:hover { color: var(--accent); border-color: var(--accent); }
 .bc-icon svg { width: 16px; height: 16px; }
-.bc-icon.listening {
-  color: #e5484d;
-  border-color: #e5484d;
-  animation: bcpulse 1.2s ease-in-out infinite;
-}
-@keyframes bcpulse { 50% { opacity: 0.5; } }
-@media (prefers-reduced-motion: reduce) { .bc-icon.listening { animation: none; } }
 
 /* whiteboard panel */
 .bc-wb { border-top: 1px solid var(--border); padding: 0.75rem; }
