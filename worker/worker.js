@@ -11,20 +11,15 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:8000',
 ];
 
-// NO PER-PERSON LIMIT. One visitor is welcome to use the whole day if they are
-// the only one here, which at 2-4 visitors/day is the normal case; cutting
-// someone off mid-session to reserve capacity for a visitor who never arrives
-// is the worse trade. The only ceiling is site-wide.
+// NO VISITOR LIMITS AT ALL, per person or site-wide. A counter here could never
+// create provider quota - it only chose which wall got hit first, and the wall
+// it chose was the worse one: a 429 is the site telling someone they have had
+// enough, where running out of quota is the providers doing it, which the
+// fallback chain already handles by trying the next one and finally collapsing
+// to the guide. Same outcome, one fewer refusal that is ours.
 //
-// GLOBAL_PER_DAY IS A GUARD, NOT CAPACITY. It cannot create provider quota: it
-// only decides which wall gets hit first. Under it, an exhausted day answers a
-// clean 429; over it, all three providers fail instead and the site drops into
-// its 10-minute resting state with the copy-paste fallback. Both are graceful,
-// which is why the exact number is a policy choice rather than a measurement.
-// (In-memory, per Worker isolate, so it resets when the isolate is recycled -
-// a speed bump. The providers' own free tiers are the hard backstop that keeps
-// this at $0.)
-const GLOBAL_PER_DAY = 1000;
+// The $0 rule is unaffected: the providers' own free tiers are the hard
+// backstop, and an exhausted free tier returns an error rather than a bill.
 
 // NO LENGTH CAP. Nothing a visitor types is cut or dropped: the per-message
 // slice and the whole-conversation trim are both gone, so a pasted resume or a
@@ -230,28 +225,9 @@ async function openAiStyle(url, key, model, system, messages) {
 }
 
 // ---- rate limiting (best-effort, in-memory) ----
-let dayStamp = '';
-let dayCount = 0;
 let lastAllFail = 0; // when every provider last failed; page checks via GET
 const lastProviderErrors = []; // last few failures, visible via the keyed /debug route
 const RESTING_WINDOW_MS = 10 * 60 * 1000;
-
-// check without recording a hit — used by the GET status endpoint and by /tts
-function peekLimited() {
-  const today = new Date().toISOString().slice(0, 10);
-  return today === dayStamp && dayCount >= GLOBAL_PER_DAY;
-}
-
-function rateLimited() {
-  const today = new Date().toISOString().slice(0, 10);
-  if (today !== dayStamp) {
-    dayStamp = today;
-    dayCount = 0;
-  }
-  if (dayCount >= GLOBAL_PER_DAY) return true;
-  dayCount += 1;
-  return false;
-}
 
 function corsHeaders(origin) {
   return {
@@ -484,14 +460,10 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
-    // Before the chat rate limiter on purpose. Speaking a reply is part of one
-    // visitor turn, not a second one, and charging it against GLOBAL_PER_DAY
-    // would halve how many conversations the day can hold. It is checked
-    // without recording a hit: the origin lock above says who may ask at all,
-    // and the ElevenLabs key's own monthly character limit is the hard ceiling.
+    // The origin lock above decides who may ask at all, and the ElevenLabs key's
+    // own monthly character limit is the ceiling. Nothing else gates this.
     if (url.pathname === '/tts') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405, origin);
-      if (peekLimited()) return json({ error: 'rate_limited' }, 429, origin);
       return handleTts(request, env, origin);
     }
     if (request.method === 'GET') {
@@ -500,7 +472,10 @@ export default {
         {
           ok: true,
           resting: Date.now() - lastAllFail < RESTING_WINDOW_MS,
-          limited: peekLimited(),
+          // Kept and always false. A page cached from before the limits were
+          // removed still reads this field, and a missing one is falsy anyway -
+          // but saying it outright means an old page can never collapse on it.
+          limited: false,
           // Zero means unlimited, and the page reads it that way: it stops
           // warning about length entirely. Reporting it rather than
           // hard-coding it means an older deployed Worker still gets the
@@ -513,10 +488,6 @@ export default {
     }
     if (request.method !== 'POST') {
       return json({ error: 'method' }, 405, origin);
-    }
-
-    if (rateLimited()) {
-      return json({ error: 'rate_limited' }, 429, origin);
     }
 
     let body;

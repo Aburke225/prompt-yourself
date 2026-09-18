@@ -872,16 +872,32 @@
   // coming back to the same role should keep the scores, or the trend line in
   // progress resets every time the visitor does the polite thing and asks for
   // feedback at the end.
-  function archiveLabel() {
+  // TWO WAYS TO BE OVER, and they are not the same claim. A debrief means the
+  // bot assessed the whole thing and said so. Pressing switch means the visitor
+  // decided they were done, which is just as final for them but carries no
+  // assessment - so it is recorded as SET ASIDE rather than finished. Calling
+  // that "finished" would credit a verdict nobody gave; leaving it out
+  // altogether would lose work the visitor actually did.
+  //
+  // Set aside is not a lesser record, it is a different one, and it can be
+  // upgraded: come back to the same topic and earn a debrief and it moves to
+  // finished. Never the other way round.
+  function archiveLabel(how) {
     var label = String(store.label || '').trim();
+    var kind = how === 'debrief' ? 'debrief' : 'switch';
     if (label) {
       store.done = store.done || [];
-      var seen = false;
+      var found = null;
       for (var i = 0; i < store.done.length; i++) {
-        if (store.done[i] && store.done[i].label === label) { seen = true; break; }
+        if (store.done[i] && store.done[i].label === label) { found = store.done[i]; break; }
       }
-      if (!seen) {
-        store.done.push({ label: label, at: new Date().toISOString().slice(0, 10) });
+      if (found) {
+        if (kind === 'debrief') {
+          found.how = 'debrief';
+          found.at = new Date().toISOString().slice(0, 10);
+        }
+      } else {
+        store.done.push({ label: label, how: kind, at: new Date().toISOString().slice(0, 10) });
         if (store.done.length > 12) store.done.shift();
       }
     }
@@ -949,7 +965,7 @@
         if (store.settled.indexOf(settled) < 0) store.settled.push(settled);
         if (store.settled.length > 12) store.settled.shift();
       }
-      if (st.done === true) archiveLabel();
+      if (st.done === true) archiveLabel('debrief');
       saveStore();
       return;
     }
@@ -995,7 +1011,7 @@
         if (store.best === null || total > store.best) store.best = total;
       }
     }
-    if (st.done === true) archiveLabel();
+    if (st.done === true) archiveLabel('debrief');
     // hand the next question forward so it is in context before it is needed
     if (qid) {
       var next = pickQuestion();
@@ -1012,11 +1028,22 @@
   // it is done. A list of past topics with ticks answers "have I been keeping
   // this up" in one glance, which is the only question a progress panel on a
   // practice site is really being asked.
+  // No ticks: the group heading already says the state, so a tick on every item
+  // restates it once per entry and says nothing about the ones in the other
+  // group.
   function doneLine() {
     var d = store.done || [];
     if (!d.length) return '';
-    var label = bot === 'coach' ? 'Interviews finished: ' : 'Topics finished: ';
-    return label + d.map(function (x) { return x.label + ' \u2713'; }).join(', ') + '.';
+    var noun = bot === 'coach' ? 'Interviews' : 'Topics';
+    var fin = [], aside = [];
+    for (var i = 0; i < d.length; i++) {
+      if (!d[i] || !d[i].label) continue;
+      (d[i].how === 'debrief' ? fin : aside).push(d[i].label);
+    }
+    var out = [];
+    if (fin.length) out.push(noun + ' finished: ' + fin.join(', ') + '.');
+    if (aside.length) out.push(noun + ' set aside: ' + aside.join(', ') + '.');
+    return out.join('\n');
   }
   function currentLine() {
     var l = String(store.label || '').trim();
@@ -1292,8 +1319,6 @@
 
   var RESTING_MSG =
     'the free bot is resting — take a look at the guide below to create your own.';
-  var LIMIT_MSG =
-    'you’ve hit the hourly limit for the free bot — take a look at the guide below to create your own.';
 
   // collapse: the bot is out of service, so the chat shrinks to the resting
   // message, typing goes away entirely, and the guide opens below.
@@ -1403,7 +1428,7 @@
       // Switching is the one place that wipes: the next thing is unrelated, so
       // carrying over open misconceptions or a half-covered competency map
       // would aim the bot at the wrong subject.
-      archiveLabel();
+      archiveLabel('switch');
       wipeWorking();
       askedThisSession = 0;
       currentQ = bot === 'coach' ? pickQuestion() : null;
@@ -1430,8 +1455,11 @@
         if (s && s.limits && typeof s.limits.messageChars === 'number') {
           msgCap = s.limits.messageChars > 0 ? s.limits.messageChars : Infinity;
         }
-        if (s.limited) collapse(LIMIT_MSG);
-        else if (s.resting) collapse(RESTING_MSG);
+        // NOTHING ERROR-SHAPED REACHES THE VISITOR. There are no visitor limits
+        // any more, so `limited` can only come from an older deployed Worker -
+        // and either way the honest thing to show is that the bot is resting
+        // and the guide is right there, never a refusal with a number in it.
+        if (s.limited || s.resting) collapse(RESTING_MSG);
         else goLive();
       })
       .catch(function () {
@@ -1576,7 +1604,8 @@
             resumeListening(0);
           });
         } else if (r.status === 429) {
-          collapse(LIMIT_MSG);
+          // unreachable against a current Worker; an older one can still say it
+          collapse(RESTING_MSG);
         } else if (r.data && r.data.error === 'too_long') {
           addBot('That was too long for the free models to read in one go. ' +
                  'Send it in two halves and I will keep both in mind.');
