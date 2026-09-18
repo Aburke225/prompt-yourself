@@ -162,14 +162,40 @@
   // strips it before anything is displayed or stored, so the visitor never sees
   // it. A missing or malformed line is normal and simply means no update —
   // never a broken reply, because free-tier models will not comply every time.
-  var STATE_RE = /<<\s*PY\s*(\{[\s\S]*?\})\s*>>/;
+  // STRIPPING CANNOT DEPEND ON THE MODEL GETTING THE SYNTAX RIGHT. Live replies
+  // produced both of these, and the first version of this regex, which required
+  // a closing >> around a well formed object, matched neither - so the raw
+  // machinery went to the screen:
+  //     <<PY {"topic":"personal budgeting","check":"none"}}     (no closing >>)
+  //     <<PY>>                                                  (empty)
+  // So the strip is deliberately greedy: anything from <<PY to the closing >>
+  // or, failing that, to the end of the reply. Parsing is a separate, tolerant
+  // step, because a marker we cannot read still has to disappear.
+  var STATE_STRIP = /<<\s*PY\b[\s\S]*?(?:>>|$)/g;
+  function parseState(chunk) {
+    var open = chunk.indexOf('{');
+    var close = chunk.lastIndexOf('}');
+    if (open < 0 || close <= open) return null;
+    var body = chunk.slice(open, close + 1);
+    for (var i = 0; i < 3; i++) {
+      try { return JSON.parse(body); } catch (e) {}
+      // models overshoot the closing brace ("}}"), so peel one and retry
+      body = body.replace(/\}\s*$/, '');
+      if (body.charAt(body.length - 1) !== '}') body += '}';
+    }
+    return null;
+  }
   function takeState(text) {
-    var m = STATE_RE.exec(text);
-    if (!m) return { clean: text.trim(), state: null };
+    var found = String(text).match(STATE_STRIP);
     var state = null;
-    try { state = JSON.parse(m[1]); } catch (e) { state = null; }
-    // strip every marker, not just the parsed one, in case it emitted two
-    var clean = text.replace(/<<\s*PY\s*\{[\s\S]*?\}\s*>>/g, '').trim();
+    if (found) {
+      for (var i = 0; i < found.length && !state; i++) state = parseState(found[i]);
+    }
+    var clean = String(text).replace(STATE_STRIP, '').trim();
+    // If the reply was nothing but machinery there is genuinely nothing to
+    // show. An empty bubble reads as broken and the raw marker reads as worse,
+    // so it becomes a short human line that invites another go.
+    if (!clean) clean = 'That came through empty on my end. Say that again?';
     return { clean: clean, state: state };
   }
 
