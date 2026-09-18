@@ -42,9 +42,7 @@
   // them to name a topic as though nothing had happened AND said it would carry
   // on from last time.
   var RETURNING = {
-    tutor:
-      "I'm the tutor bot, and we've done this before. I'll pick up from what was " +
-      "still unfinished last time. Name a new topic instead if you'd rather move on.",
+    tutor: "Great to see you again! Let's pick up where we left off.",
     coach: "Great to see you again! Let's pick up where we left off.",
   };
 
@@ -1032,13 +1030,12 @@
     }
     var greetEl = addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
-    if (!multimodal) return;
 
-    // The resume is only worth asking for once. A returning candidate already
-    // handed theirs over, or decided not to, and being asked again on every
-    // visit reads as the site having forgotten them - which is the opposite of
-    // what the profile is for. So they get one small way out instead, and the
-    // upload only comes back if they say the job has changed.
+    // The resume is only worth asking for once. A returning visitor already
+    // handed theirs over, or decided not to, and being asked again every visit
+    // reads as the site having forgotten them - the opposite of what keeping a
+    // profile is for. Both bots offer one quiet way out instead, and for the
+    // coach the upload comes back only if they take it.
     function showUpload() {
       var up = document.createElement('div');
       var upBtn = document.createElement('button');
@@ -1061,7 +1058,7 @@
     }
 
     if (priorSessions < 1) {
-      showUpload();
+      if (multimodal) showUpload();
       return;
     }
 
@@ -1069,20 +1066,22 @@
     var switchBtn = document.createElement('button');
     switchBtn.type = 'button';
     switchBtn.className = 'bc-upload bc-switch';
-    switchBtn.textContent = "I'm interviewing for something different";
+    switchBtn.textContent = multimodal
+      ? "I'm interviewing for something different"
+      : 'I want to learn a different topic';
     switchBtn.addEventListener('click', function () {
-      // Becomes a first-time session in everything the candidate can see: the
+      // Becomes a first-time session in everything the visitor can see: the
       // greeting on screen is replaced rather than added to, so the transcript
-      // does not keep a welcome back that no longer applies. History is
-      // rewritten with it too, or the model would still be working from a
-      // greeting the visitor cannot see.
-      var fresh = GREETINGS.coach;
+      // is not left holding a welcome back that no longer applies. History is
+      // rewritten with it too, or the model would keep working from a greeting
+      // the visitor can no longer see.
+      var fresh = GREETINGS[bot] || GREETINGS.tutor;
       greetEl.innerHTML = render(fresh);
       for (var i = 0; i < history.length; i++) {
         if (history[i].role === 'assistant') { history[i].content = fresh; break; }
       }
       switchRow.remove();
-      showUpload();
+      if (multimodal) showUpload();
       input.focus();
     });
     switchRow.appendChild(switchBtn);
