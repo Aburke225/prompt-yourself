@@ -337,7 +337,32 @@
   // without ever touching failure or ambiguity. Selection walks the least
   // covered competency first, never repeats a question this visitor has
   // already been asked, and steps difficulty up as the session goes on.
+  // Role tags were inert until this existed: roleHint was declared, read once,
+  // and never assigned, so every role-tagged question was eligible for
+  // everyone and the nurse residency candidate could be handed "tell me about
+  // a change you shipped that broke something". Guessed once from the opener,
+  // where people say what they are interviewing for.
+  // Order matters: the unambiguous phrases go first. "school" used to sit in
+  // the teaching cues and caught "first job out of school", filing a new
+  // graduate as a teacher, so it is gone - students are in schools too.
+  var ROLE_CUES = [
+    ['newgrad', /\b(new grad|newgrad|no experience|first job|entry level|senior year|final year|graduating|about to graduate)\b/],
+    ['healthcare', /\b(nurs\w*|cna|rn\b|patient|clinical|hospital|medical|doctor|physician|paramedic|pharmac\w*|therapist|midwif\w*|ward|bedside)\b/],
+    ['teaching', /\b(teach\w*|classroom|pupil|professor|lecturer|curricul\w*|grade team|principal|tutor\w*|educat\w*)\b/],
+    ['swe', /\b(software|engineer\w*|developer|programm\w*|backend|back end|frontend|front end|devops|full stack|python|java|javascript|sql|api|platform)\b/],
+    ['pm', /\b(product manager|product management|\bpm\b|roadmap|product owner)\b/],
+    ['retail', /\b(retail|store|shift|cashier|barista|server|waiter|waitress|hospitality|customer service|front of house)\b/],
+    ['finance', /\b(finance|financial|account\w*|audit\w*|bank\w*|cpa|bookkeep\w*|controller|treasury)\b/],
+  ];
   var roleHint = '';
+  function guessRole(text) {
+    if (roleHint) return roleHint;  // the opener decides; later talk does not
+    var t = ' ' + String(text || '').toLowerCase() + ' ';
+    for (var i = 0; i < ROLE_CUES.length; i++) {
+      if (ROLE_CUES[i][1].test(t)) { roleHint = ROLE_CUES[i][0]; return roleHint; }
+    }
+    return '';
+  }
   function pickQuestion() {
     if (!bank || !bank.questions || !bank.questions.length) return null;
     var asked = store.asked || [];
@@ -345,7 +370,9 @@
     var pool = bank.questions.filter(function (q) {
       if (asked.indexOf(q.id) >= 0) return false;
       if (!q.roles || q.roles.indexOf('any') >= 0) return true;
-      return roleHint ? q.roles.indexOf(roleHint) >= 0 : true;
+      // no role detected means the role-tagged ones stay out. Asking a
+      // question written for another job is worse than asking one less.
+      return roleHint ? q.roles.indexOf(roleHint) >= 0 : false;
     });
     if (!pool.length) return null;
     // warm up, then standard, then pressure - by how many have been asked
@@ -1012,6 +1039,11 @@
     pending = true;
     send.disabled = true;
     clockStop();                 // they have answered; the clock is evidence now
+    if (bot === 'coach' && !roleHint) {
+      guessRole(text);
+      var reQ = pickQuestion();  // re-pick now that the role is known
+      if (reQ) currentQ = reQ;
+    }
     var typing = addTyping();
 
     // Ground the topic before asking. The tutor looks the subject up so it can
