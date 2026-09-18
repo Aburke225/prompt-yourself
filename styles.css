@@ -337,6 +337,15 @@ section.part { margin-bottom: 2.75rem; }
 .bc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .bc-dot.resting { background: #D98E04; }
 
+/* Only ever seen when a message would be cut off. Amber rather than red: the
+   text is not lost yet, it just will be if they send it as is. */
+.bc-cap-notice {
+  padding: 0.5rem 1rem 0.7rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #D98E04;
+}
+
 /* The right-hand end of the status strip: the answer clock, the voice toggle
    and the progress button. `margin-left: auto` pushes the whole group over
    without the status label having to know they exist. */

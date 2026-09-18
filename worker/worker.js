@@ -20,9 +20,17 @@ const ALLOWED_ORIGINS = [
 const PER_IP_PER_HOUR = 100;
 const GLOBAL_PER_DAY = 600;
 
-const MAX_MESSAGES = 16;
-const MAX_MESSAGE_CHARS = 4000;
-const MAX_TOTAL_CHARS = 20000;
+// Tripled from 16 / 4000 / 20000. The old per-message cap was applied by
+// silently slicing, so a visitor who pasted a long resume as text lost the tail
+// without being told, and the session context block now rides on their latest
+// message too, which ate into the same allowance. 12000 characters is around
+// 2000 words, past anything anyone types into a chat box on purpose.
+// Cost note for the $0 rule: this raises the CEILING, not normal usage. A
+// typical turn is unchanged. The worst case is about 15000 tokens of input on
+// one request, which free tiers meter but do not bill.
+const MAX_MESSAGES = 48;
+const MAX_MESSAGE_CHARS = 12000;
+const MAX_TOTAL_CHARS = 60000;
 const MAX_OUTPUT_TOKENS = 1024;
 
 // Live prompts are fetched from the site (prompts.json in this repo) and
@@ -396,6 +404,15 @@ export default {
           ok: true,
           resting: Date.now() - lastAllFail < RESTING_WINDOW_MS,
           limited: peekLimited(ip),
+          // The client warns before it truncates, so it has to know the real
+          // number. Reporting it here means the page is correct against
+          // whatever Worker is actually deployed, instead of hard-coding a
+          // figure that goes stale the moment these constants change.
+          limits: {
+            messageChars: MAX_MESSAGE_CHARS,
+            totalChars: MAX_TOTAL_CHARS,
+            messages: MAX_MESSAGES,
+          },
         },
         200,
         origin

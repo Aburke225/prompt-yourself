@@ -23,6 +23,7 @@ jobs:
         run: python3 scripts/check_models.py
 
       - name: publish the new config and leave a paper trail
+        id: publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -38,9 +39,59 @@ jobs:
               "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true
             gh issue create --title "Model auto-replaced $(date +%F)" \
               --body "$(cat model-check-report.txt)" || true
+            echo "rotated=yes" >> "$GITHUB_OUTPUT"
           elif grep -q "PROBLEM" model-check-report.txt; then
             gh issue create --title "Model check needs attention $(date +%F)" \
               --body "$(cat model-check-report.txt)" || true
           else
             echo "all models healthy"
           fi
+
+      # A NEW MODEL IS A NEW SET OF HABITS. The nastiest thing this project has
+      # hit was not a prompt bug: a provider dumped several hundred words of its
+      # own deliberation to the visitor and then did the thing it was told not
+      # to. That came with the model, so every rotation is a chance to get it
+      # back, and only a fixed suite notices. This gate runs the six
+      # provider-sensitive cases after the swap and shouts if the new model
+      # misbehaves, rather than leaving it live until someone happens to look.
+      - name: wait for the new model to reach the Worker
+        if: steps.publish.outputs.rotated == 'yes'
+        run: |
+          # Pages has to build, then the Worker's own 5-minute config cache has
+          # to lapse, so this waits on the observable signal instead of a guess:
+          # models.json served from Pages matching what was just committed.
+          want=$(sha256sum models.json | cut -d' ' -f1)
+          for i in $(seq 1 24); do
+            got=$(curl -fsS "https://aburke225.github.io/prompt-yourself/models.json" \
+                  | sha256sum | cut -d' ' -f1) || got=""
+            if [ "$got" = "$want" ]; then echo "Pages is serving the new config"; break; fi
+            echo "  attempt $i: not published yet"; sleep 20
+          done
+          echo "now letting the Worker's 5-minute cache lapse"
+          sleep 330
+
+      - name: smoke the new model against the fixed suite
+        if: steps.publish.outputs.rotated == 'yes'
+        id: smoke
+        continue-on-error: true
+        # NOT piped into tee: a pipeline reports the exit code of its LAST
+        # command, so `node ... | tee` would always look successful and the
+        # issue below would never open. Redirect, then print.
+        run: |
+          node eval/run.mjs smoke > smoke.txt 2>&1
+          status=$?
+          cat smoke.txt
+          exit $status
+
+      - name: open an issue if the new model misbehaves
+        if: steps.publish.outputs.rotated == 'yes' && steps.smoke.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Deliberately not a hard failure of the run: the model swap itself
+          # was correct and reverting it would leave a dead model in place. The
+          # bots keep working; this says which behaviour regressed so the prompt
+          # can be tightened or the model pinned past it.
+          gh issue create \
+            --title "New model fails the behaviour suite $(date +%F)" \
+            --body "$(printf 'A provider model was rotated today and the provider-sensitive cases now fail.\n\nThe bots are still serving. This is about behaviour, not availability: the most likely causes are leaked reasoning, markdown where plain text was promised, caving to pushback, or a role flip.\n\n```\n%s\n```\n\nReproduce with: node eval/run.mjs smoke\n' "$(cat smoke.txt)")" || true

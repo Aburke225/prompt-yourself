@@ -1,8 +1,10 @@
 // Fixed regression suite for the two bots' prompts.
 //
-//   node eval/run.mjs              every case
-//   node eval/run.mjs tutor        one bot
-//   node eval/run.mjs f-coach-ask-01   one case by id
+//   node eval/run.mjs                      every case
+//   node eval/run.mjs tutor                one bot
+//   node eval/run.mjs f-coach-markdown-07  one or more cases by id
+//   node eval/run.mjs smoke                the provider-sensitive subset, run
+//                                          by CI after a model rotation
 //
 // Why this exists: both rounds of prompt improvements so far were graded by
 // ad-hoc judge panels, which cannot tell you that an edit QUIETLY BROKE
@@ -74,6 +76,38 @@ async function ask(bot, messages) {
   return { ok: res.ok, status: res.status, reply: data.reply || '', provider: data.provider || '' };
 }
 
+// A CROSS-CUTTING CHECK, run on every case whatever it asserts. The worst
+// failure this suite has found was not in a rule any single case covered: a
+// provider dumped several hundred words of its own deliberation to the visitor
+// ("we must obey", "according to policy", "the system instruction did not
+// anticipate role reversal") and then did the thing it was told not to. That is
+// a property of the MODEL, so it can arrive with any future rotation and land
+// on any case. Pinning it to the one role-flip case would have been luck.
+//
+// Patterns favour precision over recall: each is meta-talk about instructions
+// or a quote of the scaffolding, none of it something a reply to a learner or
+// candidate would contain. Loose phrasing like "we need to" is deliberately
+// absent, since a coach says that legitimately.
+const LEAKS = [
+  [/\baccording to (the )?polic/i, 'reasoning about policy'],
+  [/\bthe system (instruction|prompt|message)/i, 'talks about its system prompt'],
+  [/\bthe user (wants|asked|explicitly|says|is asking)/i, 'refers to the visitor in the third person'],
+  [/\bwe must (obey|comply|follow)/i, 'deliberating about compliance'],
+  [/\b(my|our) instructions\b/i, 'talks about its instructions'],
+  [/\bas an? (AI|language model)\b/i, 'breaks character as a model'],
+  [/\bSESSION CONTEXT\b/, 'quotes the injected context header'],
+  [/\bASK THIS QUESTION NEXT\b/, 'quotes the handed-question directive'],
+  [/\bLEARNER PROFILE\b/, 'quotes the profile header'],
+  [/\bREFERENCE on ["\u201c]/, 'quotes the grounding header'],
+];
+function leakCheck(clean) {
+  const out = [];
+  for (const [re, why] of LEAKS) {
+    if (re.test(clean)) out.push('LEAK (' + why + '): /' + re.source + '/');
+  }
+  return out;
+}
+
 function check(a, got) {
   const fails = [];
   const { raw, clean, state, hadMarker } = got;
@@ -99,6 +133,7 @@ function check(a, got) {
   if (a.must_end_with_question && !/\?["')\]]*\s*$/.test(clean)) {
     fails.push('must_end_with_question: ends ' + JSON.stringify(clean.slice(-40)));
   }
+  fails.push.apply(fails, leakCheck(clean));   // every case, always
   if (a.must_emit_state && !hadMarker) fails.push('must_emit_state: no <<PY {...}>> found');
   if (a.must_emit_state && hadMarker && !state) fails.push('state line present but not valid JSON');
   for (const k of a.state_must_have || []) {
@@ -108,9 +143,29 @@ function check(a, got) {
 }
 
 const fx = JSON.parse(readFileSync(new URL('./fixtures.json', import.meta.url)));
-const arg = process.argv[2];
-const cases = fx.cases.filter((c) => !arg || c.bot === arg || c.id === arg);
-if (!cases.length) { console.error('no cases match ' + arg); process.exit(2); }
+
+// The cases that catch a MODEL changing under us rather than a prompt edit:
+// character breaks, formatting, caving to pushback, question discipline. This
+// is what check-models.yml runs after it rotates a provider, because a full run
+// is about 46 requests against a 100 per hour cap and the point there is a fast
+// gate rather than total coverage. The leak detector above runs on all of them.
+const SMOKE = [
+  'f-coach-role-flip-06', 'f-tutor-role-flip-13',
+  'f-coach-markdown-07', 'f-tutor-markdown-08',
+  'f-tutor-pushback-09', 'f-coach-one-question-08',
+];
+const args = process.argv.slice(2);
+let cases;
+if (!args.length) {
+  cases = fx.cases;
+} else if (args.length === 1 && args[0] === 'smoke') {
+  cases = fx.cases.filter((c) => SMOKE.indexOf(c.id) >= 0);
+  const missing = SMOKE.filter((id) => !fx.cases.some((c) => c.id === id));
+  if (missing.length) console.error('warning: smoke ids absent from fixtures: ' + missing.join(', '));
+} else {
+  cases = fx.cases.filter((c) => args.indexOf(c.bot) >= 0 || args.indexOf(c.id) >= 0);
+}
+if (!cases.length) { console.error('no cases match ' + args.join(' ')); process.exit(2); }
 
 let pass = 0, fail = 0, skip = 0;
 const failures = [];

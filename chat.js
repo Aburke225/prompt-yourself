@@ -84,6 +84,11 @@
   attachRow.className = 'bc-attach';
   attachRow.hidden = true;
 
+  // sits under the input; only ever visible when the message is too long
+  var capNotice = document.createElement('div');
+  capNotice.className = 'bc-cap-notice';
+  capNotice.hidden = true;
+
   // the whiteboard panel itself
   var wb = document.createElement('div');
   wb.className = 'bc-wb';
@@ -119,6 +124,7 @@
     host.appendChild(wb);
   }
   host.appendChild(form);
+  host.appendChild(capNotice);
 
   var history = []; // {role, content, image?} — greeting included for context
   var pendingImage = null;
@@ -1028,6 +1034,7 @@
       .then(function (res) { return res.json(); })
       .then(function (s) {
         boot.remove();
+        if (s && s.limits && s.limits.messageChars > 0) msgCap = s.limits.messageChars;
         if (s.limited) collapse(LIMIT_MSG);
         else if (s.resting) collapse(RESTING_MSG);
         else goLive();
@@ -1040,11 +1047,33 @@
 
   var pending = false;
 
+  // The Worker truncates an over-long message by slicing it, with nothing said
+  // to the visitor, so a pasted resume lost its tail in silence. It now reports
+  // its own caps on the health check and the page warns BEFORE sending rather
+  // than letting the text vanish. Until a Worker that reports them is deployed
+  // the old 4000 is assumed, so the warning is never wrong in the direction
+  // that matters.
+  var msgCap = 4000;
+  var capNoticeShown = false;
+  function checkLength() {
+    if (input.value.length <= msgCap) {
+      if (capNotice) capNotice.hidden = true;
+      return;
+    }
+    if (!capNotice) return;
+    capNotice.hidden = false;
+    capNotice.textContent =
+      'That is ' + input.value.length.toLocaleString() + ' characters and only the first ' +
+      msgCap.toLocaleString() + ' will be sent. Trim it, or send it in two goes.';
+    capNoticeShown = true;
+  }
+
   function autogrow() {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 128) + 'px';
   }
   input.addEventListener('input', autogrow);
+  input.addEventListener('input', checkLength);
   input.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -1062,6 +1091,7 @@
     clearAttachment();
     input.value = '';
     autogrow();
+    checkLength();
     addUser(text, image);
     var msg = { role: 'user', content: text };
     if (image) msg.image = image;
