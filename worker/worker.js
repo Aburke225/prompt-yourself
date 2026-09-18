@@ -140,7 +140,12 @@ Never ask for or encourage sharing of private personal information (ID numbers, 
 };
 
 // Providers are tried in order; any without a configured key is skipped.
-function providers(env, models) {
+// The ORDER of this list is the fallback order, and it is no longer fixed:
+// models.json can carry an `order` array written by the daily ranking pass, so
+// a provider that behaves better today is tried first tomorrow. Absent or
+// partial, whatever is unlisted keeps its place at the back - sort is stable -
+// and with no `order` at all this is exactly the original hardcoded order.
+function providersUnordered(env, models) {
   return [
     {
       name: 'gemini',
@@ -204,6 +209,17 @@ function providers(env, models) {
         ),
     },
   ];
+}
+
+function providers(env, models) {
+  const list = providersUnordered(env, models);
+  const want = models && Array.isArray(models.order) ? models.order : null;
+  if (!want || !want.length) return list;
+  const rank = (n) => {
+    const i = want.indexOf(n);
+    return i < 0 ? 99 : i;
+  };
+  return list.sort((a, b) => rank(a.name) - rank(b.name));
 }
 
 async function openAiStyle(url, key, model, system, messages) {

@@ -22,30 +22,57 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python3 scripts/check_models.py
 
+      # LIVENESS DECIDES WHICH MODELS EXIST; THIS DECIDES WHICH GOES FIRST.
+      # The step above answers "is it alive" with a one-token ping, which a
+      # model that has picked up terrible habits passes perfectly. This sends
+      # one adversarial turn to each provider under the real system prompt and
+      # scores eight properties of the reply, then writes the fallback order.
+      # Three requests a day, so the spot is genuinely re-earned each morning
+      # without the measuring eating the quota it is measuring.
+      - name: rank the providers by how they behave today
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python3 scripts/rank_models.py
+
       - name: publish the new config and leave a paper trail
         id: publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if grep -q "^CHANGED" model-check-report.txt; then
+          rotated=no
+          grep -q "^CHANGED" model-check-report.txt && rotated=yes
+          # models.json now moves for two reasons - a dead model replaced, or
+          # the ranking changing - so the commit is gated on the FILE having
+          # changed rather than on one of those reasons. Scores drift most
+          # days, so expect a quiet daily commit; that is the paper trail.
+          if ! git diff --quiet -- models.json; then
             git config user.name "Andrew Burke"
             git config user.email "aburke225@berkeley.edu"
             git add models.json
-            git commit -m "models: automatic replacement of a dead provider model"
+            git commit -m "models: daily liveness check and behaviour ranking"
             git push
             curl -s -X POST \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true
-            gh issue create --title "Model auto-replaced $(date +%F)" \
-              --body "$(cat model-check-report.txt)" || true
-            echo "rotated=yes" >> "$GITHUB_OUTPUT"
+          fi
+          # An issue is for things worth a human: a model swapped under us, the
+          # order changing, or a check that could not complete. Score drift on
+          # its own is not news.
+          both=$(printf '%s\n\n%s\n' "$(cat model-check-report.txt)" "$(cat rank-report.txt 2>/dev/null)")
+          if [ "$rotated" = yes ]; then
+            gh issue create --title "Model auto-replaced $(date +%F)" --body "$both" || true
+          elif grep -q "^REORDERED" rank-report.txt 2>/dev/null; then
+            gh issue create --title "Provider order changed $(date +%F)" --body "$both" || true
           elif grep -q "PROBLEM" model-check-report.txt; then
             gh issue create --title "Model check needs attention $(date +%F)" \
               --body "$(cat model-check-report.txt)" || true
           else
-            echo "all models healthy"
+            echo "all models healthy; order unchanged"
           fi
+          echo "rotated=$rotated" >> "$GITHUB_OUTPUT"
 
       # A NEW MODEL IS A NEW SET OF HABITS. The nastiest thing this project has
       # hit was not a prompt bug: a provider dumped several hundred words of its
