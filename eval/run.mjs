@@ -201,7 +201,7 @@ console.log(`running ${cases.length} case(s) against ${ENDPOINT}\n`);
 for (const c of cases) {
   const messages = [];
   const allClean = [];
-  let got = null, bailed = '';
+  let got = null, bailed = '', servedBy = '';
   for (let i = 0; i < c.turns.length; i++) {
     const last = i === c.turns.length - 1;
     const ctx = last ? contextBlock(c.context) : '';
@@ -210,24 +210,25 @@ for (const c of cases) {
     if (r.status === 429) { bailed = 'rate limited (429)'; break; }
     if (!r.ok || !r.reply) { bailed = 'no reply (status ' + r.status + ')'; break; }
     got = takeState(r.reply);
+    servedBy = r.provider || servedBy;
     allClean.push(got.clean);
     messages[messages.length - 1] = { role: 'user', content: c.turns[i] }; // keep history clean
     messages.push({ role: 'assistant', content: got.clean });
   }
   if (bailed) {
     skip++;
-    console.log(`SKIP  ${c.id}  ${bailed}`);
+    console.log(`SKIP  ${c.id}  ${bailed}  [${servedBy || 'none answered'}]`);
     continue;
   }
   const fails = check(c.assert || {}, got, allClean);
   if (fails.length) {
     fail++;
     failures.push({ id: c.id, why: c.why, fails, reply: got.clean });
-    console.log(`FAIL  ${c.id}  (${fails.length})`);
+    console.log(`FAIL  ${c.id}  (${fails.length})  [${servedBy || '?'}]`);
     for (const f of fails) console.log('        ' + f);
   } else {
     pass++;
-    console.log(`pass  ${c.id}`);
+    console.log(`pass  ${c.id}  [${servedBy || '?'}]`);
   }
 }
 console.log(`\n${pass} passed, ${fail} failed, ${skip} skipped, of ${cases.length}`);
