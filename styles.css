@@ -488,7 +488,7 @@ section.part { margin-bottom: 2.75rem; }
   touch-action: none;
   cursor: crosshair;
 }
-.bc-wb-row { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.6rem; }
+.bc-wb-row { display: flex; justify-content: center; gap: 0.6rem; margin-top: 0.6rem; }
 .bc-wb-btn { font-size: 0.8rem; padding: 0.45rem 0.9rem; }
 
 /* pending-drawing strip above the input */
@@ -606,10 +606,14 @@ section.part { margin-bottom: 2.75rem; }
 .bc-hands.live { border-color: var(--accent); }
 .bc-hands.hearing { animation: bc-pulse 1.4s ease-in-out infinite; }
 .bc-hands.talking { opacity: 0.6; }
+/* once there is text in the box the button is gone, so the space it was
+   holding goes back to the message - the line ends where the border does */
+.bc-input-wrap.bc-has-text .bc-input { padding-right: 0.7rem; }
 @media (max-width: 520px) {
   /* on a phone the label would crowd the box, so it keeps only the verb */
   .bc-hands { font-size: 0.66rem; padding: 0.18rem 0.4rem; }
   .bc-input-wrap .bc-input { padding-right: 6rem; }
+  .bc-input-wrap.bc-has-text .bc-input { padding-right: 0.7rem; }
 }
 
 .bc-input {

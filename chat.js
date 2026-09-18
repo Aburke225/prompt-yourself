@@ -34,7 +34,7 @@
       "\"The nitrogen cycle, I have a Biology test on Friday.\"",
     coach:
       "I'm the interview bot. Tell me what you're interviewing for and a line on your background, something like: " +
-      "\"Backend engineer, three years of Python and Postgres, interviewing for a mid-level platform role.\"",
+      "\"Mid-level platform role, three years as a backend engineer.\"",
   };
 
   // A returning visitor gets its own greeting rather than the new-visitor one
@@ -527,6 +527,28 @@
       : state === 'listening' ? 'Listening…'
       : state === 'speaking' ? 'Speaking…'
       : 'Thinking…';
+    paintHands();
+  }
+
+  // The button sits INSIDE the box, so the moment there is text in the box it
+  // is in the way: it holds the right end of the line and offers the one
+  // action a person who is already typing does not want. A single character
+  // retires it, and the padding reserved for it goes too, so the text runs the
+  // full width as though it had never been there. Emptying the box - by
+  // deleting or by sending - brings it back.
+  //
+  // Clicking into the box is not typing, and deliberately so: someone who
+  // clicks may still be deciding how to answer, and that is exactly when the
+  // offer is worth seeing.
+  //
+  // It stays put for the whole spoken session. There the label is the state
+  // readout and the only way back to typing, and the live transcript fills the
+  // box on its own - hiding it on the first word heard would delete the exit.
+  function paintHands() {
+    if (!micBtn) return;
+    var typed = !talking && input.value.length > 0;
+    micBtn.hidden = typed;
+    inputWrap.classList.toggle('bc-has-text', typed);
   }
 
   function speak(text, done) {
@@ -925,12 +947,34 @@
     ctx.stroke();
   });
   canvas.addEventListener('pointerup', function () { drawing = false; });
+  // Opening the board pushes the page down by the height of a 700x380 canvas,
+  // and on a laptop window the button row lands below the fold - so the panel
+  // looks like it has no way to submit and the drawing looks stuck. This
+  // scrolls by exactly the overflow, so the whole panel including the buttons
+  // is on screen, and does nothing at all when it already is.
+  //
+  // Reading the rect right after unhiding is safe: the layout is computed on
+  // demand when the rect is read, not on a later frame.
+  function revealWb() {
+    var r = wb.getBoundingClientRect();
+    var view = window.innerHeight || document.documentElement.clientHeight;
+    var over = r.bottom + 12 - view;
+    if (over <= 0) return;
+    var reduce = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try {
+      window.scrollBy({ top: over, behavior: reduce ? 'auto' : 'smooth' });
+    } catch (e) {
+      window.scrollBy(0, over); // older Safari only takes (x, y)
+    }
+  }
   drawBtn.addEventListener('click', function () {
     wb.hidden = !wb.hidden;
     if (!wb.hidden && !canvas.dataset.inited) {
       wbBlank();
       canvas.dataset.inited = '1';
     }
+    if (!wb.hidden) revealWb();
   });
   wbClear.addEventListener('click', wbBlank);
   wbCancel.addEventListener('click', function () { wb.hidden = true; });
@@ -1240,6 +1284,9 @@
   function autogrow() {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 128) + 'px';
+    // every place the value changes - typing, a send, a transcript, a resume
+    // file - already calls autogrow, so the talk button follows from here
+    paintHands();
   }
   input.addEventListener('input', autogrow);
   input.addEventListener('input', checkLength);
