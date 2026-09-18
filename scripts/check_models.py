@@ -120,12 +120,29 @@ def catalog(provider, keys):
     return None
 
 
+# OpenRouter's own router over whatever is currently free. Like gemini's
+# "-latest" aliases it cannot be deprecated, because it resolves at request
+# time instead of naming a model, which is the whole problem this script
+# exists to paper over. Verified against the public catalog: priced 0/0.
+#
+# NOT "openrouter/auto", and especially NOT "openrouter/auto:free" - the first
+# is priced -1/-1, meaning variable, and the second is not a model id at all,
+# so asking for it silently lands on the paid router. That would break the $0
+# rule quietly, which is the worst way for it to break.
+OPENROUTER_ALIAS = "openrouter/free"
+
+
 def dynamic_pick(provider, live):
     good = [(mid, ctx) for mid, ctx in live.items()
             if not any(b in mid.lower() for b in BAD_WORDS)
-            and (provider != "openrouter" or mid.endswith(":free"))]
+            and (provider != "openrouter" or mid.endswith(":free")
+                 or mid == OPENROUTER_ALIAS)]
     if provider == "gemini":
         good.sort(key=lambda x: rank_gemini(x[0]), reverse=True)
+    elif provider == "openrouter":
+        # the alias first: it self-updates, so converging back to it means a
+        # future replacement is one fewer thing that can rot
+        good.sort(key=lambda x: (x[0] != OPENROUTER_ALIAS, -params_of(x[0]), -x[1]))
     else:
         good.sort(key=lambda x: (-params_of(x[0]), -x[1]))
     return [mid for mid, _ in good[:5]]
