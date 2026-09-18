@@ -858,6 +858,46 @@
     return String(t || '').split(/\s+/).filter(Boolean).length;
   }
 
+  // ASKING TO STOP IS WHAT PRODUCES THE DEBRIEF, so it is the better signal.
+  // The coach's prompt says outright: "give the debrief itself when they ask to
+  // stop or wrap up." That makes the visitor's own words the CAUSE and the
+  // model's done flag a report of the EFFECT - and the effect is reported on a
+  // state line that goes missing on roughly a quarter of structurally unusual
+  // turns, which a closing debrief very much is. Reading the cause needs
+  // nothing from the model at all.
+  //
+  // Both paths lead to the same call, so whichever arrives first wins and the
+  // second is a no-op: archiving an already-archived session finds no label
+  // and does nothing.
+  //
+  // The guard against false positives is length, not cleverness. "I am done
+  // with that project, we shipped it in March" is an ANSWER containing the
+  // words, and it is the shape of every false positive worth worrying about:
+  // long. A request to stop is short, because there is nothing else to say.
+  var WRAP_RE = new RegExp(
+    "\\b(" +
+    "that'?s (enough|all|it for (me|now))" +
+    "|i'?m (done|finished|good)" +
+    "|we'?re (done|finished)" +
+    "|let'?s (stop|finish|wrap)" +
+    "|wrap (it |this )?up" +
+    "|stop (here|there|for (now|today))" +
+    "|end (the )?session" +
+    "|no more questions" +
+    "|call it (here|a day|there)" +
+    "|give me (my |the )?(feedback|debrief)" +
+    "|how did i do" +
+    "|final feedback" +
+    "|debrief me" +
+    ")\\b", "i");
+  function isWrapUp(t) {
+    var v = String(t || '').trim();
+    if (!v) return false;
+    if (wordCount(v) > 10) return false;
+    return WRAP_RE.test(v);
+  }
+  var wrapRequested = false;
+
   // ---------- finishing a session ----------
   // FINISHED AND WIPED ARE DIFFERENT THINGS, and conflating them loses work.
   //
@@ -1523,6 +1563,7 @@
     input.value = '';
     autogrow();
     checkLength();
+    wrapRequested = isWrapUp(text);
     // the opening message is where the coach's role comes from
     if (bot === 'coach' && !store.label && !isNonAttempt(text) && wordCount(text) >= 2) {
       store.label = roleLabel(text);
@@ -1596,6 +1637,14 @@
           }
           var got = takeState(r.data.reply);
           applyState(got.state);
+          // After the reply, not before: a request that never got answered
+          // did not end anything. applyState may have archived this already
+          // from the state line, in which case this finds no label and is a
+          // no-op.
+          if (wrapRequested) {
+            wrapRequested = false;
+            archiveLabel('debrief');
+          }
           addBot(got.clean);
           history.push({ role: 'assistant', content: got.clean });
           // closing the loop: the mic comes back only once the bot has stopped
