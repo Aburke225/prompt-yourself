@@ -84,9 +84,25 @@ jobs:
         # issue below would never open. Redirect, then print.
         run: |
           node eval/run.mjs smoke > smoke.txt 2>&1
-          status=$?
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            # CONFIRM BEFORE CRYING WOLF. These six are the provider-sensitive
+            # cases, and free-tier models fail them intermittently: one morning
+            # two of them went red, and three targeted repeats of those same two
+            # came back 6/6 clean with no malformed state lines. Now that this
+            # runs daily and opens an issue, unconfirmed variance would mean an
+            # issue that closes itself the next day, which is how a red signal
+            # stops meaning anything. A real regression fails twice; variance
+            # usually does not. The retry costs six turns only on a day that is
+            # already unhappy.
+            echo "" >> smoke.txt
+            echo "--- first run failed; confirming before reporting ---" >> smoke.txt
+            sleep 20
+            node eval/run.mjs smoke >> smoke.txt 2>&1
+            rc=$?
+          fi
           cat smoke.txt
-          exit $status
+          exit $rc
 
       # ONE ISSUE, REUSED, AND CLOSED WHEN IT RECOVERS. On a daily trigger a
       # bare `gh issue create` would open a fresh issue every morning until
