@@ -33,7 +33,13 @@
       "I'm the tutor bot. Name a topic and what you want out of it, something like: " +
       "\"The nitrogen cycle, I have a Biology test on Friday.\"",
     coach:
-      "I'm the interview bot. Tell me what you're interviewing for and a line on your background, something like: " +
+      // Two lines, like the tutor's. The tutor line is the budget - 927px in
+      // the loaded serif - and the coach's example is inherently longer than
+      // "a Biology test on Friday", so the framing pays for it: "something
+      // like:" goes and the colon introduces the example instead. Checked
+      // against Source Serif 4 AND the Georgia/Times fallbacks, since a 5px
+      // margin in the webfont becomes a third line when the webfont fails.
+      "I'm the interview bot. Name the role and your background: " +
       "\"Staff engineer role, three years as a senior backend engineer.\"",
   };
 
@@ -451,6 +457,12 @@
   // pace is the better experience everywhere else, so the bot is silent
   // outside this mode and there is no separate switch for it.
   var TTS = 'speechSynthesis' in window;
+  // The Worker can serve a chosen ElevenLabs voice, which beats whatever the
+  // visitor's machine happens to have installed. Remote first, local as the
+  // safety net - never the other way round, and never remote-only: a spent
+  // quota must cost the nice voice, not the conversation.
+  var ttsRemote = !!ENDPOINT;
+  var ttsAudio = null;
 
   // ---------- which voice ----------
   // The browser can only offer what the visitor's own machine has installed,
@@ -551,36 +563,96 @@
     inputWrap.classList.toggle('bc-has-text', typed);
   }
 
-  function speak(text, done) {
-    if (!TTS || !talking || !multimodal) { if (done) done(); return; }
+  // Stops whichever voice is talking. Both have to be named: cancelling
+  // speechSynthesis does nothing to an <audio> element, and the spoken session
+  // can end mid-sentence in either one.
+  function silence() {
+    if (ttsAudio) {
+      try { ttsAudio.pause(); } catch (e) {}
+      ttsAudio = null;
+    }
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+  }
+
+  function speakLocal(clean, finish) {
+    if (!TTS) { finish(); return; }
     try {
       window.speechSynthesis.cancel();
-      // the state line is already stripped; strip stray punctuation runs so it
-      // does not read symbols aloud
-      var u = new SpeechSynthesisUtterance(String(text).replace(/[*_`#>]/g, ''));
+      var u = new SpeechSynthesisUtterance(clean);
       var chosen = pickVoice();
       if (chosen) { u.voice = chosen; u.lang = chosen.lang; }
       u.rate = 1.02;
-      var fired = false;
-      function finish() {
-        if (fired) return;
-        fired = true;
-        speaking = false;
-        if (done) done();
-      }
       u.onend = finish;
       u.onerror = finish;
-      speaking = true;
       paintTalk('speaking');
       window.speechSynthesis.speak(u);
       // Some browsers drop onend on a long utterance and the loop would hang
       // waiting for a turn that never comes, so the length of the text sets a
       // backstop: roughly fifteen characters a second, plus a margin.
-      setTimeout(finish, 4000 + String(text).length * 70);
+      setTimeout(finish, 4000 + clean.length * 70);
     } catch (e) {
+      finish();
+    }
+  }
+
+  function speak(text, done) {
+    if (!talking || !multimodal || (!TTS && !ttsRemote)) { if (done) done(); return; }
+    silence();
+    // the state line is already stripped; strip stray punctuation runs so it
+    // does not read symbols aloud
+    var clean = String(text).replace(/[*_`#>]/g, '');
+    var fired = false;
+    function finish() {
+      if (fired) return;
+      fired = true;
       speaking = false;
       if (done) done();
     }
+    // Claimed before the fetch, not after it. listenTurn refuses to start
+    // while the bot has the floor, and the round-trip below is time the
+    // microphone must stay shut - otherwise it hears the reply being fetched
+    // as the visitor's answer.
+    speaking = true;
+    if (!ttsRemote) { speakLocal(clean, finish); return; }
+    fetch(ENDPOINT + '/tts', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: clean }),
+    }).then(function (r) {
+      if (!r.ok) throw new Error('tts ' + r.status);
+      return r.blob();
+    }).then(function (b) {
+      if (fired) return;
+      if (!talking) { finish(); return; } // they ended the session mid-fetch
+      var src = URL.createObjectURL(b);
+      var a = new Audio(src);
+      ttsAudio = a;
+      function drop() {
+        try { URL.revokeObjectURL(src); } catch (e) {}
+        if (ttsAudio === a) ttsAudio = null;
+      }
+      a.onended = function () { drop(); finish(); };
+      // A file that will not decode, or a play() the browser refuses, is this
+      // reply's problem rather than the route's - so it falls to the local
+      // voice for this turn instead of going quiet, and tries remote again on
+      // the next one.
+      a.onerror = function () { drop(); if (!fired) speakLocal(clean, finish); };
+      // paintTalk only now. During the fetch nothing is speaking yet, and a
+      // label that says "speaking" over a silent room reads as a hang.
+      paintTalk('speaking');
+      var played = a.play();
+      if (played && played.catch) {
+        played.catch(function () { drop(); if (!fired) speakLocal(clean, finish); });
+      }
+      setTimeout(function () { drop(); finish(); }, 6000 + clean.length * 70);
+    }).catch(function () {
+      // One hard refusal is enough for the rest of the page load. A missing
+      // key, a spent monthly quota and a voice the plan may not serve all fail
+      // identically every time, and retrying per reply would add a round-trip
+      // of silence to each one.
+      ttsRemote = false;
+      if (!fired) speakLocal(clean, finish);
+    });
   }
 
   function hush() {
@@ -666,12 +738,12 @@
     talking = false;
     speaking = false;
     hush();
-    try { window.speechSynthesis.cancel(); } catch (e) {}
+    silence();
     paintTalk('talk');
     input.focus();
   }
 
-  if (SR && TTS && multimodal && micBtn) {
+  if (SR && (TTS || ttsRemote) && multimodal && micBtn) {
     paintTalk('talk');
     micBtn.addEventListener('click', function () {
       if (talking) stopTalking();

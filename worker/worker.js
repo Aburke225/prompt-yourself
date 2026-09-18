@@ -364,6 +364,83 @@ async function handleChess(request, env, url) {
   return reply({ error: 'not_found' }, 404);
 }
 
+// ---------- /tts: the coach's voice ----------
+// POST /tts  { text }  ->  audio/mpeg
+//
+// The browser's own speechSynthesis can only use voices installed on the
+// visitor's machine, which on a Mac with no Chrome voices means Samantha and
+// sounds two decades old. This proxies a chosen ElevenLabs voice instead.
+//
+// THE KEY NEVER REACHES THE PAGE. That is the only reason this route exists
+// rather than calling ElevenLabs from chat.js: a key in client JavaScript is
+// public the moment it ships.
+//
+// $0 rule: the ElevenLabs key is created on the free plan with a monthly
+// character limit set on the key itself, so an exhausted quota returns an
+// error and never a charge - the same shape as every other provider here. The
+// page falls back to speechSynthesis on ANY failure, so a spent quota costs
+// the nice voice, never the conversation.
+const TTS_VOICE_ID = 'G17SuINrv2H9FC6nvetn';
+// Flash: ~75ms and HALF a credit per character rather than one, which doubles
+// what the monthly allowance buys. Turbo v2.5 is deprecated in favour of it.
+const TTS_MODEL = 'eleven_flash_v2_5';
+// One reply is 300-500 characters. 1200 leaves room for a debrief while still
+// bounding a single call, because the failure mode worth guarding is one
+// runaway request eating the month, not a long answer.
+const TTS_MAX_CHARS = 1200;
+
+async function handleTts(request, env, origin) {
+  if (!env.ELEVENLABS_API_KEY) {
+    return json({ error: 'tts_unconfigured' }, 503, origin);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return json({ error: 'bad_json' }, 400, origin);
+  }
+  const text = typeof body.text === 'string' ? body.text.trim() : '';
+  if (!text) return json({ error: 'bad_request' }, 400, origin);
+  if (text.length > TTS_MAX_CHARS) {
+    return json({ error: 'tts_too_long', chars: text.length }, 413, origin);
+  }
+  const voice = env.ELEVENLABS_VOICE_ID || TTS_VOICE_ID;
+  let res;
+  try {
+    res = await fetch(
+      'https://api.elevenlabs.io/v1/text-to-speech/' + encodeURIComponent(voice),
+      {
+        method: 'POST',
+        headers: {
+          'xi-api-key': env.ELEVENLABS_API_KEY,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          model_id: env.ELEVENLABS_MODEL || TTS_MODEL,
+        }),
+      }
+    );
+  } catch (e) {
+    return json({ error: 'tts_unreachable' }, 502, origin);
+  }
+  if (!res.ok) {
+    // The upstream body can name the account and its plan, so only the status
+    // crosses back. 401 is the key or its scopes, 403 is a voice this plan may
+    // not use, 429 is the quota. All three mean the same thing to the page:
+    // stop asking and speak locally.
+    return json({ error: 'tts_failed', status: res.status }, 502, origin);
+  }
+  return new Response(res.body, {
+    status: 200,
+    headers: {
+      'content-type': 'audio/mpeg',
+      'cache-control': 'no-store',
+      ...corsHeaders(origin),
+    },
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -381,6 +458,12 @@ export default {
             gemini: !!env.GEMINI_API_KEY,
             groq: !!env.GROQ_API_KEY,
             openrouter: !!env.OPENROUTER_API_KEY,
+            elevenlabs: !!env.ELEVENLABS_API_KEY,
+          },
+          tts: {
+            voice: env.ELEVENLABS_VOICE_ID || TTS_VOICE_ID,
+            model: env.ELEVENLABS_MODEL || TTS_MODEL,
+            max_chars: TTS_MAX_CHARS,
           },
           models: await (async () => {
             const m = await getModels();
@@ -402,6 +485,17 @@ export default {
     }
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+    // Before the chat rate limiter on purpose. Speaking a reply is part of one
+    // visitor turn, not a second one, and charging it against GLOBAL_PER_DAY
+    // would halve how many conversations the day can hold. It is checked
+    // without recording a hit: the origin lock above says who may ask at all,
+    // and the ElevenLabs key's own monthly character limit is the hard ceiling.
+    if (url.pathname === '/tts') {
+      if (request.method !== 'POST') return json({ error: 'method' }, 405, origin);
+      const ttsIp = request.headers.get('cf-connecting-ip') || 'unknown';
+      if (peekLimited(ttsIp)) return json({ error: 'rate_limited' }, 429, origin);
+      return handleTts(request, env, origin);
     }
     if (request.method === 'GET') {
       // page-load health check: is the bot resting or this visitor limited?
