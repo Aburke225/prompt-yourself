@@ -31,7 +31,7 @@
   var GREETINGS = {
     tutor:
       "I'm the tutor bot. Name a topic and what you want out of it, something like: " +
-      "\"Integrals, I have a calculus test on Friday.\"",
+      "\"The nitrogen cycle, I have a Biology test on Friday.\"",
     coach:
       "I'm the interview bot. Tell me what you're interviewing for and a line on your background, something like: " +
       "\"Backend engineer, three years of Python and Postgres, interviewing for a mid-level platform role.\"",
