@@ -13,11 +13,42 @@
   var noun = bot === 'coach' ? 'coach' : 'tutor';
   var multimodal = bot === 'coach'; // voice + whiteboard: interview practice only
 
+  // WHAT THE OPENER HAS TO CARRY CHANGED, so these did too.
+  //
+  // It used to ask for three things each, because the bots had nothing but the
+  // conversation to go on. Two of the six are now measured better than they can
+  // be self-reported, so asking for them is asking someone to guess at
+  // something the system finds out:
+  //   the tutor's "level" - the mastery gate learns it from the first check,
+  //     and a failed check is evidence where "complete beginner" is a guess
+  //   the coach's "weak spots" - the rubric scores all five dimensions of every
+  //     answer, so the debrief reports a pattern instead of repeating a worry
+  //
+  // The remaining items got MORE load-bearing, not less, and the examples lead
+  // with them. The tutor's topic is the grounding query, so no topic means no
+  // reference to teach from. The coach's field is what roleHint reads, and
+  // without it the role-tagged questions stay out of the pool entirely.
   var GREETINGS = {
     tutor:
-      "I'm the tutor bot. To start, tell me something like: \"Excel basics — never used it — I want to build a budget for my apartment.\"",
+      "I'm the tutor bot. Name a topic and what you want out of it, something like: " +
+      "\"Compound interest, so I can work out what my savings account is actually doing.\"",
     coach:
-      "I'm the interview bot. To start, tell me something like: \"Nurse residency at a city hospital; two years as a CNA; I ramble and freeze on 'tell me about yourself'.\"",
+      "I'm the interview bot. Tell me what you're interviewing for and a line on your background, something like: " +
+      "\"Backend engineer, three years of Python and Postgres, interviewing for a mid-level platform role.\"",
+  };
+
+  // A returning visitor gets its own greeting rather than the new-visitor one
+  // with a line bolted on the end. The old append contradicted itself: it asked
+  // them to name a topic as though nothing had happened AND said it would carry
+  // on from last time.
+  var RETURNING = {
+    tutor:
+      "I'm the tutor bot, and we've done this before. I'll pick up from what was " +
+      "still unfinished last time. Name a new topic instead if you'd rather move on.",
+    coach:
+      "I'm the interview bot, and we've done this before. I'll skip the questions " +
+      "you've already had and go after the parts we haven't covered. Say so if what " +
+      "you're interviewing for has changed.",
   };
 
   // where the guide lives (its own page) — the resting button points there
@@ -236,8 +267,11 @@
   function topicOf(msg) {
     var t = String(msg || '').toLowerCase();
     // their own punctuation marks where the topic ends and the level and goal
-    // begin; a comma followed by a pronoun is that same boundary in prose
-    t = t.split(/[\u2014\u2013;\n]|(?:\s[-]\s)|,\s*(?=i\b|i'm|im\b|we\b|my\b|never\b|trying\b)/)[0];
+    // begin; a comma followed by a pronoun is that same boundary in prose, and
+    // so is one followed by "so", "because" or "and I" - "compound interest, so
+    // I can work out my savings account" is a topic with a goal attached, and
+    // without these the goal rode along and the search found the wrong article
+    t = t.split(/[\u2014\u2013;\n]|(?:\s[-]\s)|,\s*(?=i\b|i'm|im\b|we\b|my\b|never\b|trying\b|so\b|because\b|and i\b|just\b)/)[0];
     t = t
       .replace(/\b(i(?:'| a)?m|i|we)?\s*(want|would like|wanna|need|hope|try(?:ing)?)\s+to\s+(learn|understand|know|study|get)\b/g, ' ')
       .replace(/\b(teach|explain|help|show|tell|walk)\s+(me|us)?\s*(about|through)?\b/g, ' ')
@@ -993,14 +1027,11 @@
       d.classList.add('bc-report');
     });
     headTools.appendChild(progBtn);
-    var greeting = GREETINGS[bot] || GREETINGS.tutor;
+    var greeting = priorSessions > 0
+      ? (RETURNING[bot] || RETURNING.tutor)
+      : (GREETINGS[bot] || GREETINGS.tutor);
     if (bot === 'coach') {
       currentQ = pickQuestion();   // ready before the first answer arrives
-    }
-    if (priorSessions > 0) {
-      greeting += bot === 'coach'
-        ? ' We have practised together before, so I will pick up where we left off.'
-        : ' I still have what we covered last time, so I will start from there.';
     }
     addBot(greeting);
     history.push({ role: 'assistant', content: greeting });
