@@ -7,11 +7,11 @@
   "gemini-flash-lite-latest": 10.0,
   "gemini-flash-latest": 5.0,
   "openai/gpt-oss-120b": 10.0,
-  "qwen/qwen3.8-27b": 10.0,
-  "openai/gpt-oss-20b": 9.92,
+  "qwen/qwen3.8-27b": 9.38,
+  "openai/gpt-oss-20b": 9.34,
   "openrouter/free": 4.69,
-  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.0,
-  "nvidia/nemotron-3-super-120b-a12b:free": 7.15
+  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.5,
+  "nvidia/nemotron-3-super-120b-a12b:free": 8.57
  },
  "order": [
   "gemini",
