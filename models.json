@@ -1,17 +1,17 @@
 {
  "gemini": "gemini-flash-lite-latest",
  "groq": "openai/gpt-oss-120b",
- "openrouter": "nvidia/nemotron-3-ultra-550b-a55b:free",
+ "openrouter": "nvidia/nemotron-3-super-120b-a12b:free",
  "updated": "2026-09-29",
  "scores": {
   "gemini-flash-lite-latest": 10.0,
   "gemini-flash-latest": 5.0,
   "openai/gpt-oss-120b": 10.0,
   "qwen/qwen3.8-27b": 10.0,
-  "openai/gpt-oss-20b": 5.93,
+  "openai/gpt-oss-20b": 5.46,
   "openrouter/free": 6.8,
-  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.92,
-  "nvidia/nemotron-3-super-120b-a12b:free": 9.79
+  "nvidia/nemotron-3-ultra-550b-a55b:free": 7.46,
+  "nvidia/nemotron-3-super-120b-a12b:free": 9.89
  },
  "order": [
   "gemini",
