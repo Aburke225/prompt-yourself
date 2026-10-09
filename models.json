@@ -5,12 +5,12 @@
  "updated": "2026-09-29",
  "scores": {
   "gemini-flash-lite-latest": 10.0,
-  "gemini-flash-latest": 5.0,
+  "gemini-flash-latest": 7.5,
   "openai/gpt-oss-120b": 10.0,
   "qwen/qwen3.8-27b": 10.0,
-  "openai/gpt-oss-20b": 7.93,
-  "openrouter/free": 6.8,
-  "nvidia/nemotron-3-ultra-550b-a55b:free": 6.24,
+  "openai/gpt-oss-20b": 8.34,
+  "openrouter/free": 4.65,
+  "nvidia/nemotron-3-ultra-550b-a55b:free": 6.25,
   "nvidia/nemotron-3-super-120b-a12b:free": 9.97
  },
  "order": [
