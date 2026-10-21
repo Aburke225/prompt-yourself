@@ -4,14 +4,14 @@
  "openrouter": "nvidia/nemotron-3-ultra-550b-a55b:free",
  "updated": "2026-10-20",
  "scores": {
-  "gemini-flash-lite-latest": 9.84,
-  "gemini-flash-latest": 5.02,
+  "gemini-flash-lite-latest": 9.92,
+  "gemini-flash-latest": 5.01,
   "openai/gpt-oss-120b": 10.0,
-  "qwen/qwen3.8-27b": 10.0,
-  "openai/gpt-oss-20b": 9.82,
+  "qwen/qwen3.8-27b": 9.38,
+  "openai/gpt-oss-20b": 9.91,
   "openrouter/free": 8.09,
-  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.45,
-  "nvidia/nemotron-3-super-120b-a12b:free": 7.45
+  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.72,
+  "nvidia/nemotron-3-super-120b-a12b:free": 6.22
  },
  "order": [
   "groq",
