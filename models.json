@@ -7,11 +7,10 @@
   "gemini-flash-lite-latest": 10.0,
   "gemini-flash-latest": 5.0,
   "openai/gpt-oss-120b": 10.0,
-  "qwen/qwen3.8-27b": 9.98,
-  "openai/gpt-oss-20b": 9.53,
+  "qwen/qwen3.8-27b": 9.99,
+  "openai/gpt-oss-20b": 9.14,
   "openrouter/free": 5.38,
-  "nvidia/nemotron-3-ultra-550b-a55b:free": 8.82,
-  "nvidia/nemotron-3-super-120b-a12b:free": 5.04
+  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.41
  },
  "order": [
   "groq",
