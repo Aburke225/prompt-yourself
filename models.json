@@ -4,13 +4,13 @@
  "openrouter": "google/gemma-4-31b-it:free",
  "updated": "2026-10-20",
  "scores": {
-  "gemini-flash-lite-latest": 9.38,
+  "gemini-flash-lite-latest": 9.69,
   "gemini-flash-latest": 5.0,
   "openai/gpt-oss-120b": 10.0,
   "qwen/qwen3.8-27b": 10.0,
-  "openai/gpt-oss-20b": 8.41,
+  "openai/gpt-oss-20b": 9.21,
   "openrouter/free": 8.8,
-  "nvidia/nemotron-3-ultra-550b-a55b:free": 8.35,
+  "nvidia/nemotron-3-ultra-550b-a55b:free": 9.18,
   "google/gemma-4-31b-it:free": 10.0
  },
  "order": [
